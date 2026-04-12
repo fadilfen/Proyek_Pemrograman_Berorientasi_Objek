@@ -5,6 +5,10 @@ import java.util.HashMap;
 public class UserManager {
     private static HashMap<String, UserData> registeredUsers = new HashMap<>();
     
+    static {
+        registeredUsers.put("admin", new UserData("Admin Operator", "12345"));
+    }
+    
     static class UserData {
         String namaLengkap;
         String password;
