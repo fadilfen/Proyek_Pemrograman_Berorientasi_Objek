@@ -4,6 +4,7 @@ import javax.swing.*;
 import javax.swing.border.*;
 import javax.swing.table.*;
 import java.awt.*;
+import java.time.LocalDate;
 
 public class MentalWellbeingApp extends JFrame {
     private User user;
@@ -240,6 +241,22 @@ public class MentalWellbeingApp extends JFrame {
         JComboBox<String> appName = new JComboBox<>(apps);
         JTextField duration = new JTextField();
         JTextField limit = new JTextField();
+        
+        JComboBox<Integer> dayCombo = new JComboBox<>();
+        for (int i = 1; i <= 31; i++) dayCombo.addItem(i);
+        
+        JComboBox<Integer> monthCombo = new JComboBox<>();
+        for (int i = 1; i <= 12; i++) monthCombo.addItem(i);
+        
+        JComboBox<Integer> yearCombo = new JComboBox<>();
+        int currentYear = LocalDate.now().getYear();
+        for (int i = currentYear - 5; i <= currentYear + 5; i++) yearCombo.addItem(i);
+        yearCombo.setSelectedItem(currentYear);
+        
+        LocalDate today = LocalDate.now();
+        dayCombo.setSelectedItem(today.getDayOfMonth());
+        monthCombo.setSelectedItem(today.getMonthValue());
+        
         JButton addBtn = createStyledButton("Log Activity (-5 Tokens)", COLOR_PRIMARY);
 
         gbc.gridx = 0; gbc.gridy = 0; form.add(new JLabel("App Name:"), gbc);
@@ -248,10 +265,21 @@ public class MentalWellbeingApp extends JFrame {
         gbc.gridx = 1; form.add(duration, gbc);
         gbc.gridx = 0; gbc.gridy = 2; form.add(new JLabel("Daily Limit:"), gbc);
         gbc.gridx = 1; form.add(limit, gbc);
-        gbc.gridx = 0; gbc.gridy = 3; gbc.gridwidth = 2; form.add(addBtn, gbc);
+        
+        gbc.gridx = 0; gbc.gridy = 3; form.add(new JLabel("Tanggal:"), gbc);
+        JPanel datePanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 0));
+        datePanel.setOpaque(false);
+        datePanel.add(dayCombo);
+        datePanel.add(new JLabel("/"));
+        datePanel.add(monthCombo);
+        datePanel.add(new JLabel("/"));
+        datePanel.add(yearCombo);
+        gbc.gridx = 1; form.add(datePanel, gbc);
+        
+        gbc.gridx = 0; gbc.gridy = 4; gbc.gridwidth = 2; form.add(addBtn, gbc);
 
         // Table Section
-        activityModel = new DefaultTableModel(new String[]{"App", "Duration", "Limit", "Status"}, 0);
+        activityModel = new DefaultTableModel(new String[]{"App", "Duration", "Limit", "Tanggal", "Status"}, 0);
         JTable table = new JTable(activityModel);
         styleTable(table);
 
@@ -261,19 +289,27 @@ public class MentalWellbeingApp extends JFrame {
                     JOptionPane.showMessageDialog(this, "Token tidak cukup!", "Warning", JOptionPane.WARNING_MESSAGE);
                     return;
                 }
+                
+                int day = (Integer) dayCombo.getSelectedItem();
+                int month = (Integer) monthCombo.getSelectedItem();
+                int year = (Integer) yearCombo.getSelectedItem();
+                LocalDate selectedDate = LocalDate.of(year, month, day);
+                
                 AktivitasDigital act = new AktivitasDigital(
                     appName.getSelectedItem().toString(),
                     Integer.parseInt(duration.getText()),
-                    Integer.parseInt(limit.getText())
+                    Integer.parseInt(limit.getText()),
+                    selectedDate
                 );
                 user.tambahAktivitas(act);
                 user.kurangiToken(5);
                 
                 String status = act.melebihiBatas() ? "OVER LIMIT" : "HEALTHY";
-                activityModel.addRow(new Object[]{act.getNamaAplikasi(), act.getDurasiMenit(), act.getBatasDurasi(), status});
+                String tanggalStr = String.format("%02d/%02d/%d", day, month, year);
+                activityModel.addRow(new Object[]{act.getNamaAplikasi(), act.getDurasiMenit(), act.getBatasDurasi(), tanggalStr, status});
                 refreshDashboard();
             } catch (Exception ex) {
-                JOptionPane.showMessageDialog(this, "Mohon masukkan angka valid");
+                JOptionPane.showMessageDialog(this, "Mohon masukkan data yang valid: " + ex.getMessage());
             }
         });
 

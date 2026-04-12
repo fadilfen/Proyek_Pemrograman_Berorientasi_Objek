@@ -39,7 +39,11 @@ public class User {
     }
 
     public LaporanHarian lihatLaporan() {
-        return new LaporanHarian(hitungTotalScreenTime(), hitungScoreKesehatan());
+        return new LaporanHarian(
+            hitungTotalScreenTime(),
+            hitungScoreKesehatan(),
+            aktivitasList
+        );
     }
 
     public void tambahToken(int jumlah) { token += jumlah; }

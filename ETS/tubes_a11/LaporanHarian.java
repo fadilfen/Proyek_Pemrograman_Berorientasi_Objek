@@ -1,18 +1,41 @@
 package tubes_a11;
 
+import java.util.ArrayList;
+import java.time.LocalDate;
+
 public class LaporanHarian {
     private int totalDurasi;
     private int skorHarian;
+    private ArrayList<AktivitasDigital> aktivitasList;
 
-    public LaporanHarian(int totalDurasi, int skorHarian) {
+    public LaporanHarian(int totalDurasi, int skorHarian, ArrayList<AktivitasDigital> aktivitasList) {
         this.totalDurasi = totalDurasi;
         this.skorHarian = skorHarian;
+        this.aktivitasList = aktivitasList;
     }
 
     public String generateLaporan() {
-        return "=== LAPORAN HARIAN ===\n" +
-               "Total Screen Time : " + totalDurasi + " menit\n" +
-               "Skor Harian       : " + skorHarian + "\n" +
-               "Status            : " + (skorHarian >= 70 ? "Sehat" : "Kurangi Screen Time");
+        String laporan = "=== LAPORAN HARIAN ===\n";
+
+        if (!aktivitasList.isEmpty()) {
+            LocalDate tanggal = aktivitasList.get(0).getTanggal();
+            laporan += "Tanggal           : " + tanggal + "\n";
+        }
+
+        laporan += "------------------------------\n";
+        laporan += "Detail Aplikasi:\n";
+
+        for (AktivitasDigital aktivitas : aktivitasList) {
+            laporan += "- " + aktivitas.getNamaAplikasi() +
+                       " : " + aktivitas.getDurasiMenit() + " menit\n";
+        }
+
+        laporan += "------------------------------\n";
+        laporan += "Total Screen Time : " + totalDurasi + " menit\n";
+        laporan += "Skor Harian       : " + skorHarian + "\n";
+        laporan += "Status            : " +
+                (skorHarian >= 70 ? "Sehat" : "Kurangi Screen Time");
+
+        return laporan;
     }
 }
