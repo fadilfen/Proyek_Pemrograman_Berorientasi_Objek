@@ -8,15 +8,18 @@ import java.time.LocalDate;
 
 public class MentalWellbeingApp extends JFrame {
     private User user;
-    private JLabel tokenLabel, scoreLabel, screenTimeLabel;
+    private String currentUsername;
+    private JPanel tokenLabel, scoreLabel, screenTimeLabel;
     private DefaultTableModel activityModel;
+    private JPanel contentPanel;
     
-    // --- Palette Warna Modern ---
-    private final Color COLOR_PRIMARY = new Color(74, 144, 226); // Blue
-    private final Color COLOR_SUCCESS = new Color(46, 204, 113); // Green
-    private final Color COLOR_DANGER  = new Color(231, 76, 60);  // Red
-    private final Color COLOR_BG      = new Color(248, 249, 250); // Light Grayish Blue
-    private final Color COLOR_CARD    = Color.WHITE;
+    // --- Palette Warna Merah Kalem ---
+    private final Color COLOR_PRIMARY = new Color(224, 51, 72);   // #e03348 Merah utama
+    private final Color COLOR_SUCCESS = new Color(180, 40, 60);   // Merah tua (aksi)
+    private final Color COLOR_DANGER  = new Color(120, 20, 35);   // Merah sangat tua (logout)
+    private final Color COLOR_BG      = new Color(248, 197, 176); // #f8c5b0 Peach latar
+    private final Color COLOR_CARD    = new Color(255, 240, 232); // Peach muda card
+    private final Color COLOR_SIDEBAR = new Color(100, 20, 35);   // Merah tua sidebar
     private final Font FONT_BOLD      = new Font("Segoe UI", Font.BOLD, 14);
     private final Font FONT_REGULAR   = new Font("Segoe UI", Font.PLAIN, 13);
 
@@ -46,7 +49,7 @@ public class MentalWellbeingApp extends JFrame {
         JPasswordField loginPassword = new JPasswordField();
         JButton loginBtn = createStyledButton("LOGIN", COLOR_PRIMARY);
         JButton toRegisterBtn = new JButton("<html><u>Belum punya akun? Daftar disini</u></html>");
-        toRegisterBtn.setForeground(COLOR_PRIMARY);
+        toRegisterBtn.setForeground(COLOR_SIDEBAR);
         toRegisterBtn.setBorderPainted(false);
         toRegisterBtn.setContentAreaFilled(false);
         toRegisterBtn.setCursor(new Cursor(Cursor.HAND_CURSOR));
@@ -84,7 +87,7 @@ public class MentalWellbeingApp extends JFrame {
         JPasswordField regPassword = new JPasswordField();
         JButton registerBtn = createStyledButton("DAFTAR", COLOR_SUCCESS);
         JButton toLoginBtn = new JButton("<html><u>Sudah punya akun? Login disini</u></html>");
-        toLoginBtn.setForeground(COLOR_PRIMARY);
+        toLoginBtn.setForeground(COLOR_SIDEBAR);
         toLoginBtn.setBorderPainted(false);
         toLoginBtn.setContentAreaFilled(false);
         toLoginBtn.setCursor(new Cursor(Cursor.HAND_CURSOR));
@@ -125,7 +128,9 @@ public class MentalWellbeingApp extends JFrame {
             String namaLengkap = UserManager.login(username, password);
             
             if (namaLengkap != null) {
+                currentUsername = username;
                 user = new User(1, namaLengkap, 50);
+                user.setUsername(username);
                 login.dispose();
                 initUI();
             } else {
@@ -175,60 +180,303 @@ public class MentalWellbeingApp extends JFrame {
 
     private void initUI() {
         setTitle("MindFull - Mental Health Tracker");
-        setSize(1000, 700);
+        setSize(1100, 650);
         setLocationRelativeTo(null);
         setDefaultCloseOperation(EXIT_ON_CLOSE);
         getContentPane().setBackground(COLOR_BG);
-        setLayout(new BorderLayout(20, 20));
+        setLayout(new BorderLayout());
 
-        // --- Header / Dashboard Cards ---
-        JPanel headerPanel = new JPanel(new GridLayout(1, 3, 20, 0));
-        headerPanel.setOpaque(false);
-        headerPanel.setBorder(new EmptyBorder(25, 25, 10, 25));
+        // Sidebar
+        JPanel sidebar = createSidebar();
+        add(sidebar, BorderLayout.WEST);
 
-        tokenLabel = createDashboardCard("Tokens Available", "0", new Color(155, 89, 182));
-        scoreLabel = createDashboardCard("Wellness Score", "0", COLOR_SUCCESS);
-        screenTimeLabel = createDashboardCard("Screen Time", "0 min", COLOR_PRIMARY);
+        // Content Panel
+        contentPanel = new JPanel(new BorderLayout());
+        contentPanel.setBackground(COLOR_BG);
+        add(contentPanel, BorderLayout.CENTER);
 
-        headerPanel.add(tokenLabel);
-        headerPanel.add(scoreLabel);
-        headerPanel.add(screenTimeLabel);
-
-        // --- Tabs ---
-        UIManager.put("TabbedPane.selected", Color.WHITE);
-        UIManager.put("TabbedPane.contentAreaColor", Color.WHITE);
-        
-        JTabbedPane tabs = new JTabbedPane();
-        tabs.setFont(FONT_BOLD);
-        tabs.setBorder(new EmptyBorder(10, 25, 25, 25));
-
-        tabs.addTab("  Activity Tracker  ", createActivityPanel());
-        tabs.addTab("  Top Up Balance  ", createTopUpPanel());
-        tabs.addTab("  Health Report  ", createReportPanel());
-
-        add(headerPanel, BorderLayout.NORTH);
-        add(tabs, BorderLayout.CENTER);
-        
-        refreshDashboard();
+        showHomePage();
         setVisible(true);
     }
 
-    private JLabel createDashboardCard(String title, String value, Color accent) {
-        JLabel label = new JLabel("<html><div style='text-align: center; padding: 10px;'>"
-                + "<span style='font-size: 10px; color: gray;'>" + title + "</span><br>"
-                + "<span style='font-size: 18px; font-weight: bold; color: " + getHex(accent) + ";'>" + value + "</span>"
-                + "</div></html>");
-        label.setOpaque(true);
-        label.setBackground(COLOR_CARD);
-        label.setHorizontalAlignment(SwingConstants.CENTER);
-        label.setBorder(BorderFactory.createMatteBorder(0, 0, 4, 0, accent));
-        return label;
+    private JPanel createSidebar() {
+        JPanel sidebar = new JPanel();
+        sidebar.setLayout(new BorderLayout());
+        sidebar.setBackground(COLOR_SIDEBAR);
+        sidebar.setPreferredSize(new Dimension(200, getHeight()));
+
+        JPanel menuPanel = new JPanel();
+        menuPanel.setLayout(new BoxLayout(menuPanel, BoxLayout.Y_AXIS));
+        menuPanel.setBackground(COLOR_SIDEBAR);
+        menuPanel.setBorder(new EmptyBorder(20, 15, 20, 15));
+
+        // Profile Button
+        JButton profileBtn = createSidebarButton(user.getNamaUser(), true);
+        profileBtn.addActionListener(e -> showProfilePage());
+        menuPanel.add(profileBtn);
+        menuPanel.add(Box.createRigidArea(new Dimension(0, 30)));
+
+        // Menu Buttons
+        JButton homeBtn = createSidebarButton("Home", false);
+        homeBtn.addActionListener(e -> showHomePage());
+        menuPanel.add(homeBtn);
+        menuPanel.add(Box.createRigidArea(new Dimension(0, 10)));
+
+        JButton activityBtn = createSidebarButton("Activity Tracker", false);
+        activityBtn.addActionListener(e -> showActivityPage());
+        menuPanel.add(activityBtn);
+        menuPanel.add(Box.createRigidArea(new Dimension(0, 10)));
+
+        JButton topupBtn = createSidebarButton("Top Up Balance", false);
+        topupBtn.addActionListener(e -> showTopUpPage());
+        menuPanel.add(topupBtn);
+        menuPanel.add(Box.createRigidArea(new Dimension(0, 10)));
+
+        JButton reportBtn = createSidebarButton("Health Report", false);
+        reportBtn.addActionListener(e -> showReportPage());
+        menuPanel.add(reportBtn);
+
+        sidebar.add(menuPanel, BorderLayout.NORTH);
+
+        // Logout Button
+        JPanel logoutPanel = new JPanel();
+        logoutPanel.setBackground(COLOR_SIDEBAR);
+        logoutPanel.setBorder(new EmptyBorder(15, 15, 15, 15));
+        JButton logoutBtn = createSidebarButton("Logout", false);
+        logoutBtn.setBackground(COLOR_DANGER);
+        logoutBtn.addActionListener(e -> {
+            int confirm = JOptionPane.showConfirmDialog(this, "Yakin ingin logout?", "Konfirmasi", JOptionPane.YES_NO_OPTION);
+            if (confirm == JOptionPane.YES_OPTION) {
+                dispose();
+                new MentalWellbeingApp();
+            }
+        });
+        logoutPanel.add(logoutBtn);
+        sidebar.add(logoutPanel, BorderLayout.SOUTH);
+
+        return sidebar;
+    }
+
+    private JButton createSidebarButton(String text, boolean isProfile) {
+        JButton btn = new JButton(text);
+        btn.setFont(isProfile ? new Font("Segoe UI", Font.BOLD, 15) : FONT_BOLD);
+        btn.setForeground(Color.WHITE);
+        btn.setBackground(isProfile ? COLOR_PRIMARY : new Color(52, 73, 94));
+        btn.setFocusPainted(false);
+        btn.setBorderPainted(false);
+        btn.setAlignmentX(Component.CENTER_ALIGNMENT);
+        btn.setMaximumSize(new Dimension(180, 40));
+        btn.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        btn.setHorizontalAlignment(SwingConstants.LEFT);
+        btn.setBorder(new EmptyBorder(10, 15, 10, 15));
+        return btn;
+    }
+
+    private void showHomePage() {
+        contentPanel.removeAll();
+        
+        JPanel homePanel = new JPanel(new BorderLayout());
+        homePanel.setBackground(COLOR_BG);
+        homePanel.setBorder(new EmptyBorder(20, 25, 20, 25));
+
+        JLabel title = new JLabel("Dashboard Overview");
+        title.setFont(new Font("Segoe UI", Font.BOLD, 22));
+        title.setForeground(COLOR_SIDEBAR);
+        homePanel.add(title, BorderLayout.NORTH);
+
+        // Cards vertikal (beriringan ke bawah)
+        JPanel cardsPanel = new JPanel(new GridLayout(3, 1, 0, 12));
+        cardsPanel.setOpaque(false);
+        cardsPanel.setBorder(new EmptyBorder(15, 0, 0, 0));
+
+        tokenLabel = createDashboardCard("Tokens Available", String.valueOf(user.getToken()), new Color(224, 51, 72));
+        scoreLabel = createDashboardCard("Wellness Score", String.valueOf(user.hitungScoreKesehatan()), new Color(160, 35, 55));
+        screenTimeLabel = createDashboardCard("Screen Time", user.hitungTotalScreenTime() + " min", new Color(120, 20, 40));
+
+        cardsPanel.add(tokenLabel);
+        cardsPanel.add(scoreLabel);
+        cardsPanel.add(screenTimeLabel);
+
+        // Wrap agar cards tidak memenuhi seluruh layar
+        JPanel cardWrapper = new JPanel(new BorderLayout());
+        cardWrapper.setOpaque(false);
+        cardWrapper.add(cardsPanel, BorderLayout.NORTH);
+
+        homePanel.add(cardWrapper, BorderLayout.CENTER);
+        contentPanel.add(homePanel);
+        contentPanel.revalidate();
+        contentPanel.repaint();
+    }
+
+    private void showProfilePage() {
+        contentPanel.removeAll();
+        
+        JPanel profilePanel = new JPanel(new BorderLayout());
+        profilePanel.setBackground(COLOR_BG);
+        profilePanel.setBorder(new EmptyBorder(20, 25, 20, 25));
+
+        JLabel title = new JLabel("Profil Pengguna");
+        title.setFont(new Font("Segoe UI", Font.BOLD, 24));
+        title.setForeground(COLOR_SIDEBAR);
+        profilePanel.add(title, BorderLayout.NORTH);
+
+        JPanel formPanel = new JPanel(new GridBagLayout());
+        formPanel.setBackground(COLOR_CARD);
+        formPanel.setBorder(new EmptyBorder(30, 30, 30, 30));
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.insets = new Insets(10, 10, 10, 10);
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+
+        JLabel nameLabel = new JLabel("Nama Lengkap: " + user.getNamaUser());
+        nameLabel.setFont(new Font("Segoe UI", Font.PLAIN, 16));
+        
+        JTextField newUsername = new JTextField(currentUsername, 20);
+        JPasswordField newPassword = new JPasswordField(20);
+        JButton updateBtn = createStyledButton("Update Credentials", COLOR_PRIMARY);
+
+        gbc.gridx = 0; gbc.gridy = 0; gbc.gridwidth = 2;
+        formPanel.add(nameLabel, gbc);
+        
+        gbc.gridy = 1; gbc.gridwidth = 1; gbc.insets = new Insets(30, 10, 10, 10);
+        formPanel.add(new JLabel("Username Baru:"), gbc);
+        gbc.gridx = 1; formPanel.add(newUsername, gbc);
+
+        gbc.gridx = 0; gbc.gridy = 2; gbc.insets = new Insets(10, 10, 10, 10);
+        formPanel.add(new JLabel("Password Baru:"), gbc);
+        gbc.gridx = 1; formPanel.add(newPassword, gbc);
+
+        gbc.gridx = 0; gbc.gridy = 3; gbc.gridwidth = 2; gbc.insets = new Insets(20, 10, 10, 10);
+        formPanel.add(updateBtn, gbc);
+
+        updateBtn.addActionListener(e -> {
+            String username = newUsername.getText().trim();
+            String password = new String(newPassword.getPassword());
+            
+            if (username.isEmpty() || password.isEmpty()) {
+                JOptionPane.showMessageDialog(this, "Username dan password tidak boleh kosong!", "Error", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+            
+            if (UserManager.updateCredentials(currentUsername, username, password)) {
+                currentUsername = username;
+                user.setUsername(username);
+                JOptionPane.showMessageDialog(this, "Credentials berhasil diupdate!", "Sukses", JOptionPane.INFORMATION_MESSAGE);
+            } else {
+                JOptionPane.showMessageDialog(this, "Username sudah digunakan!", "Error", JOptionPane.ERROR_MESSAGE);
+            }
+        });
+
+        JPanel centerWrapper = new JPanel(new GridBagLayout());
+        centerWrapper.setOpaque(false);
+        centerWrapper.add(formPanel);
+        
+        profilePanel.add(centerWrapper, BorderLayout.CENTER);
+        contentPanel.add(profilePanel);
+        contentPanel.revalidate();
+        contentPanel.repaint();
+    }
+
+    private void showActivityPage() {
+        contentPanel.removeAll();
+        
+        JPanel activityPanel = new JPanel(new BorderLayout());
+        activityPanel.setBackground(COLOR_BG);
+        activityPanel.setBorder(new EmptyBorder(20, 25, 20, 25));
+
+        JLabel title = new JLabel("Activity Tracker");
+        title.setFont(new Font("Segoe UI", Font.BOLD, 24));
+        title.setForeground(COLOR_SIDEBAR);
+        activityPanel.add(title, BorderLayout.NORTH);
+
+        JPanel content = createActivityPanel();
+        content.setBorder(new EmptyBorder(20, 0, 0, 0));
+        activityPanel.add(content, BorderLayout.CENTER);
+
+        contentPanel.add(activityPanel);
+        contentPanel.revalidate();
+        contentPanel.repaint();
+    }
+
+    private void showTopUpPage() {
+        contentPanel.removeAll();
+        
+        JPanel topupPanel = new JPanel(new BorderLayout());
+        topupPanel.setBackground(COLOR_BG);
+        topupPanel.setBorder(new EmptyBorder(20, 25, 20, 25));
+
+        JLabel title = new JLabel("Top Up Balance");
+        title.setFont(new Font("Segoe UI", Font.BOLD, 22));
+        title.setForeground(COLOR_SIDEBAR);
+        topupPanel.add(title, BorderLayout.NORTH);
+
+        JPanel centerWrapper = new JPanel(new GridBagLayout());
+        centerWrapper.setOpaque(false);
+        centerWrapper.setBorder(new EmptyBorder(15, 0, 0, 0));
+        centerWrapper.add(createTopUpPanel());
+        
+        topupPanel.add(centerWrapper, BorderLayout.CENTER);
+        contentPanel.add(topupPanel);
+        contentPanel.revalidate();
+        contentPanel.repaint();
+    }
+
+    private void showReportPage() {
+        contentPanel.removeAll();
+        
+        JPanel reportPanel = new JPanel(new BorderLayout());
+        reportPanel.setBackground(COLOR_BG);
+        reportPanel.setBorder(new EmptyBorder(20, 25, 20, 25));
+
+        JLabel title = new JLabel("Health Report");
+        title.setFont(new Font("Segoe UI", Font.BOLD, 22));
+        title.setForeground(COLOR_SIDEBAR);
+        reportPanel.add(title, BorderLayout.NORTH);
+
+        JPanel content = createReportPanel();
+        content.setBorder(new EmptyBorder(15, 0, 0, 0));
+        reportPanel.add(content, BorderLayout.CENTER);
+
+        contentPanel.add(reportPanel);
+        contentPanel.revalidate();
+        contentPanel.repaint();
+    }
+
+    private JPanel createDashboardCard(String title, String value, Color accent) {
+        JPanel card = new JPanel(new BorderLayout(15, 0));
+        card.setBackground(COLOR_CARD);
+        card.setPreferredSize(new Dimension(0, 80));
+        card.setMaximumSize(new Dimension(Integer.MAX_VALUE, 80));
+        card.setBorder(BorderFactory.createCompoundBorder(
+            BorderFactory.createLineBorder(new Color(220, 160, 150), 1),
+            BorderFactory.createCompoundBorder(
+                BorderFactory.createMatteBorder(0, 6, 0, 0, accent),
+                BorderFactory.createEmptyBorder(0, 22, 0, 22)
+            )
+        ));
+
+        // Kiri: judul
+        JLabel titleLbl = new JLabel(title);
+        titleLbl.setFont(new Font("Segoe UI", Font.PLAIN, 16));
+        titleLbl.setForeground(new Color(100, 30, 40));
+
+        // Kanan: nilai besar
+        JLabel valueLbl = new JLabel(value);
+        valueLbl.setFont(new Font("Segoe UI", Font.BOLD, 34));
+        valueLbl.setForeground(accent);
+        valueLbl.setHorizontalAlignment(SwingConstants.RIGHT);
+
+        card.add(titleLbl, BorderLayout.WEST);
+        card.add(valueLbl, BorderLayout.EAST);
+        return card;
     }
 
     private JPanel createActivityPanel() {
         JPanel panel = new JPanel(new BorderLayout(15, 15));
         panel.setBackground(COLOR_CARD);
-        panel.setBorder(new EmptyBorder(20, 20, 20, 20));
+        panel.setBorder(BorderFactory.createCompoundBorder(
+            BorderFactory.createLineBorder(new Color(220, 160, 150), 1),
+            new EmptyBorder(20, 20, 20, 20)
+        ));
 
         // Form Section
         JPanel form = new JPanel(new GridBagLayout());
@@ -307,7 +555,7 @@ public class MentalWellbeingApp extends JFrame {
                 String status = act.melebihiBatas() ? "OVER LIMIT" : "HEALTHY";
                 String tanggalStr = String.format("%02d/%02d/%d", day, month, year);
                 activityModel.addRow(new Object[]{act.getNamaAplikasi(), act.getDurasiMenit(), act.getBatasDurasi(), tanggalStr, status});
-                refreshDashboard();
+                showHomePage();
             } catch (Exception ex) {
                 JOptionPane.showMessageDialog(this, "Mohon masukkan data yang valid: " + ex.getMessage());
             }
@@ -321,6 +569,10 @@ public class MentalWellbeingApp extends JFrame {
     private JPanel createTopUpPanel() {
         JPanel panel = new JPanel(new GridBagLayout());
         panel.setBackground(COLOR_CARD);
+        panel.setBorder(BorderFactory.createCompoundBorder(
+            BorderFactory.createLineBorder(new Color(220, 160, 150), 1),
+            new EmptyBorder(20, 20, 20, 20)
+        ));
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.insets = new Insets(10, 10, 10, 10);
         gbc.fill = GridBagConstraints.HORIZONTAL;
@@ -339,7 +591,7 @@ public class MentalWellbeingApp extends JFrame {
             try {
                 TopUp topUp = new TopUp(Integer.parseInt(jumlah.getText()), metode.getSelectedItem().toString());
                 topUp.prosesTopUp(user);
-                refreshDashboard();
+                showHomePage();
                 JOptionPane.showMessageDialog(this, "Top up berhasil ditambahkan!");
             } catch (Exception ex) {
                 JOptionPane.showMessageDialog(this, "Jumlah tidak valid");
@@ -350,33 +602,83 @@ public class MentalWellbeingApp extends JFrame {
     }
 
     private JPanel createReportPanel() {
-        JPanel panel = new JPanel(new BorderLayout(15, 15));
-        panel.setBackground(COLOR_CARD);
-        panel.setBorder(new EmptyBorder(20, 20, 20, 20));
+        JPanel panel = new JPanel(new BorderLayout(10, 10));
+        panel.setBackground(COLOR_BG);
 
-        JTextArea area = new JTextArea();
-        area.setEditable(false);
-        area.setFont(new Font("Monospaced", Font.PLAIN, 12));
-        area.setBackground(new Color(250, 250, 250));
-        
         JButton generate = createStyledButton("Generate Summary Report", COLOR_PRIMARY);
-        generate.addActionListener(e -> area.setText(user.lihatLaporan().generateLaporan()));
+
+        // Paper container - akan diisi setelah generate
+        JPanel paperWrapper = new JPanel(new BorderLayout());
+        paperWrapper.setBackground(COLOR_BG);
+        paperWrapper.setBorder(new EmptyBorder(10, 0, 0, 0));
+
+        generate.addActionListener(e -> {
+            String laporan = user.lihatLaporan().generateLaporan();
+            paperWrapper.removeAll();
+            paperWrapper.add(createPaperPanel(laporan), BorderLayout.CENTER);
+            paperWrapper.revalidate();
+            paperWrapper.repaint();
+        });
 
         panel.add(generate, BorderLayout.NORTH);
-        panel.add(new JScrollPane(area), BorderLayout.CENTER);
+        panel.add(new JScrollPane(paperWrapper), BorderLayout.CENTER);
         return panel;
     }
 
-    // --- Helper UI Methods ---
-    
-    private void refreshDashboard() {
-        tokenLabel.setText("<html><div style='text-align: center;'><span style='font-size: 10px; color: gray;'>Tokens Available</span><br>"
-                + "<span style='font-size: 18px; font-weight: bold; color: #9b59b6;'>" + user.getToken() + "</span></div></html>");
-        scoreLabel.setText("<html><div style='text-align: center;'><span style='font-size: 10px; color: gray;'>Wellness Score</span><br>"
-                + "<span style='font-size: 18px; font-weight: bold; color: #2ecc71;'>" + user.hitungScoreKesehatan() + "</span></div></html>");
-        screenTimeLabel.setText("<html><div style='text-align: center;'><span style='font-size: 10px; color: gray;'>Screen Time</span><br>"
-                + "<span style='font-size: 18px; font-weight: bold; color: #4a90e2;'>" + user.hitungTotalScreenTime() + " min</span></div></html>");
+    private JPanel createPaperPanel(String laporan) {
+        // Bangun HTML untuk tampilan kertas yang rapi
+        StringBuilder html = new StringBuilder();
+        html.append("<html><body style='font-family:Segoe UI,Arial,sans-serif; margin:0; padding:0;'>");
+        html.append("<div style='text-align:center; margin-bottom:14px;'>");
+        html.append("<span style='font-size:20pt; font-weight:bold; color:#2c3e50;'>Health Summary Report</span><br>");
+        html.append("<span style='font-size:11pt; color:#888;'>MindFull - Mental Wellbeing App</span>");
+        html.append("</div>");
+        html.append("<hr style='border:none; border-top:1px solid #ddd; margin:8px 0;'>");
+
+        String[] lines = laporan.split("\n");
+        for (String line : lines) {
+            String trimmed = line.trim();
+            if (trimmed.isEmpty()) {
+                html.append("<br>");
+            } else if (trimmed.startsWith("===") || trimmed.startsWith("---")) {
+                html.append("<hr style='border:none; border-top:1px solid #e0e0e0; margin:6px 0;'>");
+            } else if (trimmed.toUpperCase().equals(trimmed) && trimmed.length() > 3 && !trimmed.contains(":")) {
+                html.append("<p style='margin:10px 0 5px 0; font-size:13pt; font-weight:bold; color:#2c3e50;'>").append(trimmed).append("</p>");
+            } else if (trimmed.startsWith("-") || trimmed.startsWith("\u2022")) {
+                html.append("<p style='margin:3px 0 3px 18px; font-size:12pt; color:#555;'>").append(trimmed).append("</p>");
+            } else if (trimmed.contains(":")) {
+                int idx = trimmed.indexOf(":");
+                String key = trimmed.substring(0, idx + 1);
+                String val = trimmed.substring(idx + 1);
+                html.append("<p style='margin:4px 0; font-size:12pt;'><b style='color:#34495e;'>").append(key).append("</b><span style='color:#555;'>").append(val).append("</span></p>");
+            } else {
+                html.append("<p style='margin:3px 0; font-size:12pt; color:#555;'>").append(trimmed).append("</p>");
+            }
+        }
+
+        html.append("<hr style='border:none; border-top:1px solid #ddd; margin:12px 0 6px 0;'>");
+        html.append("<p style='font-size:8pt; color:#bbb; text-align:right;'>Generated by MindFull App</p>");
+        html.append("</body></html>");
+
+        // JEditorPane untuk render HTML yang rapi
+        javax.swing.JEditorPane editorPane = new javax.swing.JEditorPane("text/html", html.toString());
+        editorPane.setEditable(false);
+        editorPane.setBackground(new Color(255, 245, 238));
+        editorPane.putClientProperty(javax.swing.JEditorPane.HONOR_DISPLAY_PROPERTIES, Boolean.TRUE);
+        editorPane.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+
+        // Bungkus dalam panel kertas
+        JPanel paper = new JPanel(new BorderLayout());
+        paper.setBackground(new Color(255, 245, 238));
+        paper.setBorder(BorderFactory.createCompoundBorder(
+            BorderFactory.createLineBorder(new Color(210, 140, 130), 1),
+            new EmptyBorder(25, 35, 25, 35)
+        ));
+        paper.add(editorPane, BorderLayout.CENTER);
+        return paper;
     }
+
+    // --- Helper UI Methods ---
 
     private JButton createStyledButton(String text, Color color) {
         JButton btn = new JButton(text);
@@ -395,9 +697,10 @@ public class MentalWellbeingApp extends JFrame {
         table.getTableHeader().setFont(FONT_BOLD);
         table.getTableHeader().setBackground(COLOR_PRIMARY);
         table.getTableHeader().setForeground(Color.WHITE);
-        table.setSelectionBackground(new Color(232, 240, 254));
+        table.setSelectionBackground(new Color(255, 200, 190));
+        table.setBackground(COLOR_CARD);
         table.setShowVerticalLines(false);
-        table.setGridColor(new Color(230, 230, 230));
+        table.setGridColor(new Color(220, 160, 150));
     }
 
     private String getHex(Color c) {

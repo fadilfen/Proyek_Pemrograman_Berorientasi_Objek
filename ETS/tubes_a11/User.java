@@ -5,6 +5,7 @@ import java.util.ArrayList;
 public class User {
     private int idUser;
     private String namaUser;
+    private String username;
     private int token;
     private ArrayList<AktivitasDigital> aktivitasList = new ArrayList<>();
 
@@ -42,11 +43,15 @@ public class User {
         return new LaporanHarian(
             hitungTotalScreenTime(),
             hitungScoreKesehatan(),
-            aktivitasList
+            aktivitasList,
+            namaUser
         );
     }
 
     public void tambahToken(int jumlah) { token += jumlah; }
     public void kurangiToken(int jumlah) { token -= jumlah; }
     public int getToken() { return token; }
+    public String getNamaUser() { return namaUser; }
+    public String getUsername() { return username; }
+    public void setUsername(String username) { this.username = username; }
 }

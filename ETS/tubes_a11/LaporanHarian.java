@@ -7,15 +7,18 @@ public class LaporanHarian {
     private int totalDurasi;
     private int skorHarian;
     private ArrayList<AktivitasDigital> aktivitasList;
+    private String namaUser;
 
-    public LaporanHarian(int totalDurasi, int skorHarian, ArrayList<AktivitasDigital> aktivitasList) {
+    public LaporanHarian(int totalDurasi, int skorHarian, ArrayList<AktivitasDigital> aktivitasList, String namaUser) {
         this.totalDurasi = totalDurasi;
         this.skorHarian = skorHarian;
         this.aktivitasList = aktivitasList;
+        this.namaUser = namaUser;
     }
 
     public String generateLaporan() {
         String laporan = "=== LAPORAN HARIAN ===\n";
+        laporan += "Nama User         : " + namaUser + "\n";
 
         if (!aktivitasList.isEmpty()) {
             LocalDate tanggal = aktivitasList.get(0).getTanggal();

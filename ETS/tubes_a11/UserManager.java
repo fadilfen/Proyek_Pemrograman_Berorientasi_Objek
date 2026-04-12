@@ -34,4 +34,18 @@ public class UserManager {
         }
         return null;
     }
+    
+    public static boolean updateCredentials(String oldUsername, String newUsername, String newPassword) {
+        if (!registeredUsers.containsKey(oldUsername)) {
+            return false;
+        }
+        if (!oldUsername.equals(newUsername) && registeredUsers.containsKey(newUsername)) {
+            return false;
+        }
+        UserData data = registeredUsers.get(oldUsername);
+        registeredUsers.remove(oldUsername);
+        data.password = newPassword;
+        registeredUsers.put(newUsername, data);
+        return true;
+    }
 }
