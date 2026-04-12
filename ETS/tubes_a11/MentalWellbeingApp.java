@@ -210,29 +210,66 @@ public class MentalWellbeingApp extends JFrame {
         menuPanel.setBackground(COLOR_SIDEBAR);
         menuPanel.setBorder(new EmptyBorder(20, 15, 20, 15));
 
-        // Profile Button
-        JButton profileBtn = createSidebarButton(user.getNamaUser(), true);
+        // --- Avatar Profil ---
+        JPanel avatarSection = new JPanel();
+        avatarSection.setLayout(new BoxLayout(avatarSection, BoxLayout.Y_AXIS));
+        avatarSection.setOpaque(false);
+        avatarSection.setAlignmentX(Component.CENTER_ALIGNMENT);
+
+        // Lingkaran avatar dengan inisial
+        JPanel avatar = createAvatarPanel(user.getNamaUser());
+        avatar.setAlignmentX(Component.CENTER_ALIGNMENT);
+        avatarSection.add(avatar);
+        avatarSection.add(Box.createRigidArea(new Dimension(0, 10)));
+
+        // Nama lengkap di bawah avatar
+        JLabel namaLabel = new JLabel(user.getNamaUser(), SwingConstants.CENTER);
+        namaLabel.setFont(new Font("Segoe UI", Font.BOLD, 13));
+        namaLabel.setForeground(Color.WHITE);
+        namaLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+        namaLabel.setMaximumSize(new Dimension(170, 20));
+        avatarSection.add(namaLabel);
+        avatarSection.add(Box.createRigidArea(new Dimension(0, 6)));
+
+        // Tombol Edit Profil kecil
+        JButton profileBtn = new JButton("Edit Profil");
+        profileBtn.setFont(new Font("Segoe UI", Font.PLAIN, 11));
+        profileBtn.setForeground(new Color(255, 200, 190));
+        profileBtn.setBorderPainted(false);
+        profileBtn.setContentAreaFilled(false);
+        profileBtn.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        profileBtn.setAlignmentX(Component.CENTER_ALIGNMENT);
         profileBtn.addActionListener(e -> showProfilePage());
-        menuPanel.add(profileBtn);
-        menuPanel.add(Box.createRigidArea(new Dimension(0, 30)));
+        avatarSection.add(profileBtn);
+
+        menuPanel.add(avatarSection);
+        menuPanel.add(Box.createRigidArea(new Dimension(0, 20)));
+
+        // Garis pemisah
+        JSeparator sep = new JSeparator();
+        sep.setMaximumSize(new Dimension(170, 1));
+        sep.setForeground(new Color(150, 60, 70));
+        sep.setAlignmentX(Component.CENTER_ALIGNMENT);
+        menuPanel.add(sep);
+        menuPanel.add(Box.createRigidArea(new Dimension(0, 16)));
 
         // Menu Buttons
-        JButton homeBtn = createSidebarButton("Home", false);
+        JButton homeBtn = createSidebarButton("Home");
         homeBtn.addActionListener(e -> showHomePage());
         menuPanel.add(homeBtn);
         menuPanel.add(Box.createRigidArea(new Dimension(0, 10)));
 
-        JButton activityBtn = createSidebarButton("Activity Tracker", false);
+        JButton activityBtn = createSidebarButton("Activity Tracker");
         activityBtn.addActionListener(e -> showActivityPage());
         menuPanel.add(activityBtn);
         menuPanel.add(Box.createRigidArea(new Dimension(0, 10)));
 
-        JButton topupBtn = createSidebarButton("Top Up Balance", false);
+        JButton topupBtn = createSidebarButton("Top Up Balance");
         topupBtn.addActionListener(e -> showTopUpPage());
         menuPanel.add(topupBtn);
         menuPanel.add(Box.createRigidArea(new Dimension(0, 10)));
 
-        JButton reportBtn = createSidebarButton("Health Report", false);
+        JButton reportBtn = createSidebarButton("Health Report");
         reportBtn.addActionListener(e -> showReportPage());
         menuPanel.add(reportBtn);
 
@@ -242,7 +279,7 @@ public class MentalWellbeingApp extends JFrame {
         JPanel logoutPanel = new JPanel();
         logoutPanel.setBackground(COLOR_SIDEBAR);
         logoutPanel.setBorder(new EmptyBorder(15, 15, 15, 15));
-        JButton logoutBtn = createSidebarButton("Logout", false);
+        JButton logoutBtn = createSidebarButton("Logout");
         logoutBtn.setBackground(COLOR_DANGER);
         logoutBtn.addActionListener(e -> {
             int confirm = JOptionPane.showConfirmDialog(this, "Yakin ingin logout?", "Konfirmasi", JOptionPane.YES_NO_OPTION);
@@ -257,11 +294,60 @@ public class MentalWellbeingApp extends JFrame {
         return sidebar;
     }
 
-    private JButton createSidebarButton(String text, boolean isProfile) {
+    private JPanel createAvatarPanel(String namaUser) {
+        // Ambil inisial: maks 2 huruf pertama dari setiap kata
+        String[] parts = namaUser.trim().split("\\s+");
+        String initials = "";
+        for (int i = 0; i < Math.min(2, parts.length); i++) {
+            if (!parts[i].isEmpty()) initials += parts[i].charAt(0);
+        }
+        final String inisial = initials.toUpperCase();
+
+        JPanel circle = new JPanel() {
+            private final int SZ = 80;
+            @Override public Dimension getPreferredSize() { return new Dimension(SZ, SZ); }
+            @Override public Dimension getMinimumSize()   { return new Dimension(SZ, SZ); }
+            @Override public Dimension getMaximumSize()   { return new Dimension(SZ, SZ); }
+
+            @Override
+            protected void paintComponent(Graphics g) {
+                super.paintComponent(g);
+                Graphics2D g2 = (Graphics2D) g.create();
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+
+                int pad  = 4;
+                int size = SZ - pad * 2;  // 72
+                int x    = pad;
+                int y    = pad;
+
+                // Lingkaran isi merah
+                g2.setColor(new Color(224, 100, 110));
+                g2.fillOval(x, y, size, size);
+
+                // Border ring putih dengan stroke — selalu presisi, tidak terpotong
+                g2.setColor(new Color(255, 255, 255, 210));
+                g2.setStroke(new BasicStroke(3f));
+                g2.drawOval(x + 1, y + 1, size - 2, size - 2);
+
+                // Teks inisial di tengah
+                g2.setColor(Color.WHITE);
+                g2.setFont(new Font("Segoe UI", Font.BOLD, size / 2));
+                FontMetrics fm = g2.getFontMetrics();
+                int tx = x + (size - fm.stringWidth(inisial)) / 2;
+                int ty = y + (size - fm.getHeight()) / 2 + fm.getAscent();
+                g2.drawString(inisial, tx, ty);
+                g2.dispose();
+            }
+        };
+        circle.setOpaque(false);
+        return circle;
+    }
+
+    private JButton createSidebarButton(String text) {
         JButton btn = new JButton(text);
-        btn.setFont(isProfile ? new Font("Segoe UI", Font.BOLD, 15) : FONT_BOLD);
+        btn.setFont(FONT_BOLD);
         btn.setForeground(Color.WHITE);
-        btn.setBackground(isProfile ? COLOR_PRIMARY : new Color(52, 73, 94));
+        btn.setBackground(new Color(130, 40, 55));
         btn.setFocusPainted(false);
         btn.setBorderPainted(false);
         btn.setAlignmentX(Component.CENTER_ALIGNMENT);
