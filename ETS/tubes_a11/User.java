@@ -48,6 +48,10 @@ public class User {
         );
     }
 
+    public ArrayList<AktivitasDigital> getAktivitasList() {
+        return aktivitasList;
+    }
+
     public void tambahToken(int jumlah) { token += jumlah; }
     public void kurangiToken(int jumlah) { token -= jumlah; }
     public int getToken() { return token; }
