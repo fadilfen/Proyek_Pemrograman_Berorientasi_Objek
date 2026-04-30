@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="id">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Profile – MindFull</title>
+    <!-- CSS bersama untuk semua halaman yang memiliki sidebar -->
+    <link rel="stylesheet" th:href="@{/style.css}"/>
+</head>
+<body>
+
+    <!-- ── Sidebar Navigasi ── -->
+    <div class="sidebar">
+        <div class="sidebar-logo">🧠 MindFull</div>
+
+        <!-- Blok avatar dan nama user dari session -->
+        <div class="sidebar-avatar">
+            <div class="avatar-circle"
+                 th:text="${#strings.substring(session.namaUser, 0, 1)}">A</div>
+            <div>
+                <div class="avatar-nama" th:text="${session.namaUser}">User</div>
+                <div class="avatar-role">Member</div>
+            </div>
+        </div>
+
+        <div class="sidebar-divider"></div>
+        <div class="nav-label">NAVIGATION</div>
+
+        <!-- Menu navigasi, 'active' ditandai pada halaman saat ini -->
+        <a th:href="@{/dashboard}" class="nav-item">🏠&nbsp; Dashboard</a>
+        <a th:href="@{/activity}"  class="nav-item">📊&nbsp; Activity Tracker</a>
+        <a th:href="@{/topup}"     class="nav-item">💳&nbsp; Top Up Balance</a>
+        <a th:href="@{/report}"    class="nav-item">📋&nbsp; Health Report</a>
+        <a th:href="@{/profile}"   class="nav-item active">👤&nbsp; Profile</a>
+
+        <div class="sidebar-bottom">
+            <a th:href="@{/logout}" class="btn-logout">⬅&nbsp; Logout</a>
+        </div>
+    </div>
+
+    <!-- ── Konten Utama ── -->
+    <div class="main">
+
+        <!-- Header halaman -->
+        <div>
+            <div class="page-judul">Profile</div>
+            <div class="page-sub">Manage your account credentials</div>
+        </div>
+
+        <!-- Pesan sukses atau error dari controller -->
+        <div th:if="${success}" class="alert alert-success"
+             style="margin-top: 16px;" th:text="${success}"></div>
+        <div th:if="${error}" class="alert alert-error"
+             style="margin-top: 16px;" th:text="${error}"></div>
+
+        <!-- Card profil, ditengahkan -->
+        <div class="center-wrap">
+            <div class="card card-center">
+
+                <!-- Baris avatar besar + nama dan username -->
+                <div style="display: flex; align-items: center; gap: 14px; margin-bottom: 24px;">
+                    <div style="width: 52px; height: 52px; border-radius: 50%;
+                                background: linear-gradient(135deg, #00d2c8, #4682ff);
+                                display: flex; align-items: center; justify-content: center;
+                                font-weight: bold; font-size: 20px; color: white; flex-shrink: 0;
+                                text-transform: uppercase;"
+                         th:text="${#strings.substring(user.namaUser, 0, 1)}">A</div>
+                    <div>
+                        <div style="font-size: 18px; font-weight: bold; color: #dce8ff;"
+                             th:text="${user.namaUser}">Nama User</div>
+                        <div style="font-size: 11px; color: #46608a;"
+                             th:text="'@' + ${user.username}">@username</div>
+                    </div>
+                </div>
+
+                <!-- Form update credentials, dikirim ke MainController.updateProfile() -->
+                <form th:action="@{/profile/update}" method="post">
+
+                    <!-- Input username baru, diisi dengan username saat ini -->
+                    <div class="form-group">
+                        <label class="form-label">New Username</label>
+                        <input type="text"
+                               name="newUsername"
+                               class="form-control"
+                               th:value="${user.username}"
+                               required/>
+                    </div>
+
+                    <!-- Input password baru -->
+                    <div class="form-group">
+                        <label class="form-label">New Password</label>
+                        <input type="password"
+                               name="newPassword"
+                               class="form-control"
+                               placeholder="Password baru"
+                               required/>
+                    </div>
+
+                    <button type="submit" class="btn btn-blue btn-full">
+                        Update Credentials
+                    </button>
+                </form>
+
+            </div>
+        </div>
+
+    </div>
+
+</body>
+</html>

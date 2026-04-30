@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="id">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Dashboard – MindFull</title>
+    <!-- CSS bersama untuk semua halaman yang memiliki sidebar -->
+    <link rel="stylesheet" th:href="@{/style.css}"/>
+</head>
+<body>
+
+    <!-- ── Sidebar Navigasi ── -->
+    <div class="sidebar">
+        <div class="sidebar-logo">🧠 MindFull</div>
+
+        <!-- Blok avatar dan nama user dari session -->
+        <div class="sidebar-avatar">
+            <div class="avatar-circle"
+                 th:text="${#strings.substring(session.namaUser, 0, 1)}">A</div>
+            <div>
+                <div class="avatar-nama" th:text="${session.namaUser}">User</div>
+                <div class="avatar-role">Member</div>
+            </div>
+        </div>
+
+        <div class="sidebar-divider"></div>
+        <div class="nav-label">NAVIGATION</div>
+
+        <!-- Menu navigasi, 'active' ditandai pada halaman saat ini -->
+        <a th:href="@{/dashboard}" class="nav-item active">🏠&nbsp; Dashboard</a>
+        <a th:href="@{/activity}"  class="nav-item">📊&nbsp; Activity Tracker</a>
+        <a th:href="@{/topup}"     class="nav-item">💳&nbsp; Top Up Balance</a>
+        <a th:href="@{/report}"    class="nav-item">📋&nbsp; Health Report</a>
+        <a th:href="@{/profile}"   class="nav-item">👤&nbsp; Profile</a>
+
+        <div class="sidebar-bottom">
+            <a th:href="@{/logout}" class="btn-logout">⬅&nbsp; Logout</a>
+        </div>
+    </div>
+
+    <!-- ── Konten Utama ── -->
+    <div class="main">
+
+        <!-- Header halaman dengan tanggal hari ini -->
+        <div>
+            <div class="page-judul">Dashboard</div>
+            <div class="page-sub"
+                 th:text="${#temporals.format(today, 'EEEE, dd MMMM yyyy')}">Tanggal</div>
+        </div>
+
+        <!-- Baris 3 kartu statistik: Token, Wellness Score, Screen Time -->
+        <div class="stats-row">
+
+            <!-- Kartu Token -->
+            <div class="stat-card" style="border-left-color: #00d2c8;">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <span class="stat-label">TOKENS</span>
+                    <span class="stat-ikon">🪙</span>
+                </div>
+                <div class="stat-nilai" style="color: #00d2c8;"
+                     th:text="${user.token}">50</div>
+                <div class="stat-sub">Available balance</div>
+            </div>
+
+            <!-- Kartu Wellness Score -->
+            <div class="stat-card" style="border-left-color: #32d78c;">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <span class="stat-label">WELLNESS SCORE</span>
+                    <span class="stat-ikon">💚</span>
+                </div>
+                <div class="stat-nilai" style="color: #32d78c;"
+                     th:text="${score}">100</div>
+                <div class="stat-sub">Overall health index</div>
+            </div>
+
+            <!-- Kartu Screen Time -->
+            <div class="stat-card" style="border-left-color: #4682ff;">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <span class="stat-label">SCREEN TIME</span>
+                    <span class="stat-ikon">⏱</span>
+                </div>
+                <div class="stat-nilai" style="color: #4682ff;"
+                     th:text="${totalScreenTime} + ' min'">0 min</div>
+                <div class="stat-sub">Total today</div>
+            </div>
+
+        </div>
+
+        <!-- Quick actions: tombol pintasan ke halaman lain -->
+        <div class="quick-actions">
+            <span style="font-size: 11px; color: #46608a;">Quick actions:</span>
+            <a th:href="@{/activity}" class="pill-btn">+ Log Activity</a>
+            <a th:href="@{/topup}"    class="pill-btn">+ Top Up</a>
+            <a th:href="@{/report}"   class="pill-btn">View Report</a>
+        </div>
+
+    </div>
+
+</body>
+</html>

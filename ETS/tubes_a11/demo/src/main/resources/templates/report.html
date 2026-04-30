@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="id">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Health Report – MindFull</title>
+    <!-- CSS bersama untuk semua halaman yang memiliki sidebar -->
+    <link rel="stylesheet" th:href="@{/style.css}"/>
+</head>
+<body>
+
+    <!-- ── Sidebar Navigasi ── -->
+    <div class="sidebar">
+        <div class="sidebar-logo">🧠 MindFull</div>
+
+        <!-- Blok avatar dan nama user dari session -->
+        <div class="sidebar-avatar">
+            <div class="avatar-circle"
+                 th:text="${#strings.substring(session.namaUser, 0, 1)}">A</div>
+            <div>
+                <div class="avatar-nama" th:text="${session.namaUser}">User</div>
+                <div class="avatar-role">Member</div>
+            </div>
+        </div>
+
+        <div class="sidebar-divider"></div>
+        <div class="nav-label">NAVIGATION</div>
+
+        <!-- Menu navigasi, 'active' ditandai pada halaman saat ini -->
+        <a th:href="@{/dashboard}" class="nav-item">🏠&nbsp; Dashboard</a>
+        <a th:href="@{/activity}"  class="nav-item">📊&nbsp; Activity Tracker</a>
+        <a th:href="@{/topup}"     class="nav-item">💳&nbsp; Top Up Balance</a>
+        <a th:href="@{/report}"    class="nav-item active">📋&nbsp; Health Report</a>
+        <a th:href="@{/profile}"   class="nav-item">👤&nbsp; Profile</a>
+
+        <div class="sidebar-bottom">
+            <a th:href="@{/logout}" class="btn-logout">⬅&nbsp; Logout</a>
+        </div>
+    </div>
+
+    <!-- ── Konten Utama ── -->
+    <div class="main">
+
+        <!-- Header halaman -->
+        <div>
+            <div class="page-judul">Health Report</div>
+            <div class="page-sub">Your mental wellbeing summary</div>
+        </div>
+
+        <!-- Card laporan -->
+        <div class="card" style="margin-top: 24px;">
+
+            <!-- Tombol generate laporan, dikirim ke MainController.generateReport() -->
+            <form th:action="@{/report/generate}" method="post">
+                <button type="submit" class="btn btn-cyan">
+                    Generate Summary Report
+                </button>
+            </form>
+
+            <!-- Kotak teks laporan, hanya muncul setelah tombol ditekan -->
+            <div th:if="${laporan}" class="report-box" th:text="${laporan}"></div>
+
+            <!-- Pesan panduan jika laporan belum di-generate -->
+            <div th:if="${laporan == null}"
+                 style="color: #46608a; font-size: 13px; margin-top: 16px;">
+                Klik tombol di atas untuk generate laporan harian.
+            </div>
+
+        </div>
+
+    </div>
+
+</body>
+</html>

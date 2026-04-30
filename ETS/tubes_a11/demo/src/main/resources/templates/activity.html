@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="id">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Activity Tracker – MindFull</title>
+    <!-- CSS bersama untuk semua halaman yang memiliki sidebar -->
+    <link rel="stylesheet" th:href="@{/style.css}"/>
+</head>
+<body>
+
+    <!-- ── Sidebar Navigasi ── -->
+    <div class="sidebar">
+        <div class="sidebar-logo">🧠 MindFull</div>
+
+        <!-- Blok avatar dan nama user dari session -->
+        <div class="sidebar-avatar">
+            <div class="avatar-circle"
+                 th:text="${#strings.substring(session.namaUser, 0, 1)}">A</div>
+            <div>
+                <div class="avatar-nama" th:text="${session.namaUser}">User</div>
+                <div class="avatar-role">Member</div>
+            </div>
+        </div>
+
+        <div class="sidebar-divider"></div>
+        <div class="nav-label">NAVIGATION</div>
+
+        <!-- Menu navigasi, 'active' ditandai pada halaman saat ini -->
+        <a th:href="@{/dashboard}" class="nav-item">🏠&nbsp; Dashboard</a>
+        <a th:href="@{/activity}"  class="nav-item active">📊&nbsp; Activity Tracker</a>
+        <a th:href="@{/topup}"     class="nav-item">💳&nbsp; Top Up Balance</a>
+        <a th:href="@{/report}"    class="nav-item">📋&nbsp; Health Report</a>
+        <a th:href="@{/profile}"   class="nav-item">👤&nbsp; Profile</a>
+
+        <div class="sidebar-bottom">
+            <a th:href="@{/logout}" class="btn-logout">⬅&nbsp; Logout</a>
+        </div>
+    </div>
+
+    <!-- ── Konten Utama ── -->
+    <div class="main">
+
+        <!-- Header halaman -->
+        <div>
+            <div class="page-judul">Activity Tracker</div>
+            <div class="page-sub">Log your digital activities</div>
+        </div>
+
+        <!-- Pesan sukses atau error dari controller -->
+        <div th:if="${success}" class="alert alert-success"
+             style="margin-top: 16px;" th:text="${success}"></div>
+        <div th:if="${error}" class="alert alert-error"
+             style="margin-top: 16px;" th:text="${error}"></div>
+
+        <!-- Layout dua kolom: form kiri, tabel kanan -->
+        <div class="two-col">
+
+            <!-- ── Form Tambah Aktivitas ── -->
+            <div class="card">
+                <div style="font-size: 18px; font-weight: bold; color: #dce8ff; margin-bottom: 18px;">
+                    App &amp; Duration
+                </div>
+
+                <!-- Form dikirim ke MainController.addActivity() -->
+                <form th:action="@{/activity/add}" method="post">
+
+                    <!-- Pilihan aplikasi (sama dengan dropdown di proyek GUI) -->
+                    <div class="form-group">
+                        <label class="form-label">Application</label>
+                        <select name="namaAplikasi" class="form-control">
+                            <option>TikTok</option>
+                            <option>Instagram</option>
+                            <option>YouTube</option>
+                            <option>WhatsApp</option>
+                            <option>Netflix</option>
+                            <option>Spotify</option>
+                        </select>
+                    </div>
+
+                    <!-- Input durasi penggunaan dalam menit -->
+                    <div class="form-group">
+                        <label class="form-label">Duration (min)</label>
+                        <input type="number"
+                               name="durasiMenit"
+                               class="form-control"
+                               placeholder="Durasi dalam menit"
+                               min="1"
+                               required/>
+                    </div>
+
+                    <!-- Input batas durasi harian -->
+                    <div class="form-group">
+                        <label class="form-label">Daily Limit (min)</label>
+                        <input type="number"
+                               name="batasDurasi"
+                               class="form-control"
+                               placeholder="Batas harian (menit)"
+                               min="1"
+                               required/>
+                    </div>
+
+                    <!-- Input tanggal aktivitas, default hari ini -->
+                    <div class="form-group">
+                        <label class="form-label">Date</label>
+                        <input type="date"
+                               name="tanggal"
+                               class="form-control"
+                               th:value="${#temporals.format(today, 'yyyy-MM-dd')}"
+                               required/>
+                    </div>
+
+                    <!-- Tombol submit, memotong 5 token -->
+                    <button type="submit" class="btn btn-cyan btn-full">
+                        Log Activity (−5 Tokens)
+                    </button>
+                </form>
+            </div>
+
+            <!-- ── Tabel Riwayat Aktivitas ── -->
+            <div class="card">
+                <div style="font-size: 18px; font-weight: bold; color: #dce8ff; margin-bottom: 14px;">
+                    Activity Log
+                </div>
+
+                <div style="overflow-x: auto;">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>App</th>
+                                <th>Duration</th>
+                                <th>Limit</th>
+                                <th>Date</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Iterasi daftar aktivitas milik user yang sedang login -->
+                            <tr th:each="a : ${aktivitasList}">
+                                <td th:text="${a.namaAplikasi}"></td>
+                                <td th:text="${a.durasiMenit} + ' min'"></td>
+                                <td th:text="${a.batasDurasi} + ' min'"></td>
+                                <td th:text="${#temporals.format(a.tanggal, 'dd/MM/yyyy')}"></td>
+                                <td>
+                                    <!-- Warna hijau jika sehat, merah jika melebihi batas -->
+                                    <span th:if="${!a.melebihiBatas()}" class="status-sehat">HEALTHY</span>
+                                    <span th:if="${a.melebihiBatas()}"  class="status-over">OVER LIMIT</span>
+                                </td>
+                            </tr>
+
+                            <!-- Tampilkan pesan jika belum ada aktivitas -->
+                            <tr th:if="${#lists.isEmpty(aktivitasList)}">
+                                <td colspan="5" style="color: #46608a; padding: 20px;">
+                                    Belum ada aktivitas yang dicatat
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+</body>
+</html>
