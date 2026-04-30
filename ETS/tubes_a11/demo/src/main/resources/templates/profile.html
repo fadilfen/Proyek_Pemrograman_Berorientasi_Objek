@@ -4,81 +4,114 @@
     <meta charset="UTF-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <title>Profile – MindFull</title>
-    <!-- CSS bersama untuk semua halaman yang memiliki sidebar -->
+    <link rel="preconnect" href="https://fonts.googleapis.com"/>
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous"/>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
     <link rel="stylesheet" th:href="@{/style.css}"/>
 </head>
 <body>
 
-    <!-- ── Sidebar Navigasi ── -->
-    <div class="sidebar">
-        <div class="sidebar-logo">🧠 MindFull</div>
+    <!-- ══════════════════════════════════════════════════════
+         SIDEBAR NAVIGASI
+         ══════════════════════════════════════════════════════ -->
+    <aside class="sidebar">
 
-        <!-- Blok avatar dan nama user dari session -->
-        <div class="sidebar-avatar">
-            <div class="avatar-circle"
+        <div class="sidebar-logo">
+            <div class="sidebar-logo-icon">🧠</div>
+            MindFull
+        </div>
+
+        <div class="sidebar-profile">
+            <div class="avatar"
                  th:text="${#strings.substring(session.namaUser, 0, 1)}">A</div>
             <div>
-                <div class="avatar-nama" th:text="${session.namaUser}">User</div>
-                <div class="avatar-role">Member</div>
+                <div class="profile-nama" th:text="${session.namaUser}">User</div>
+                <div class="profile-role">Member</div>
             </div>
         </div>
 
-        <div class="sidebar-divider"></div>
-        <div class="nav-label">NAVIGATION</div>
+        <div class="nav-section">Menu</div>
 
-        <!-- Menu navigasi, 'active' ditandai pada halaman saat ini -->
-        <a th:href="@{/dashboard}" class="nav-item">🏠&nbsp; Dashboard</a>
-        <a th:href="@{/activity}"  class="nav-item">📊&nbsp; Activity Tracker</a>
-        <a th:href="@{/topup}"     class="nav-item">💳&nbsp; Top Up Balance</a>
-        <a th:href="@{/report}"    class="nav-item">📋&nbsp; Health Report</a>
-        <a th:href="@{/profile}"   class="nav-item active">👤&nbsp; Profile</a>
+        <a th:href="@{/dashboard}" class="nav-item">
+            <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+            Dashboard
+        </a>
+        <a th:href="@{/activity}" class="nav-item">
+            <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+            Activity Tracker
+        </a>
+        <a th:href="@{/topup}" class="nav-item">
+            <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+            Top Up Balance
+        </a>
+        <a th:href="@{/report}" class="nav-item">
+            <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+            Health Report
+        </a>
+        <a th:href="@{/profile}" class="nav-item active">
+            <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            Profile
+        </a>
 
-        <div class="sidebar-bottom">
-            <a th:href="@{/logout}" class="btn-logout">⬅&nbsp; Logout</a>
+        <div class="sidebar-footer">
+            <a th:href="@{/logout}" class="btn-logout">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+                Logout
+            </a>
         </div>
-    </div>
+    </aside>
 
-    <!-- ── Konten Utama ── -->
-    <div class="main">
+    <!-- ══════════════════════════════════════════════════════
+         KONTEN UTAMA
+         ══════════════════════════════════════════════════════ -->
+    <main class="main">
 
-        <!-- Header halaman -->
-        <div>
+        <div class="page-header">
             <div class="page-judul">Profile</div>
-            <div class="page-sub">Manage your account credentials</div>
+            <div class="page-sub">Kelola informasi dan kredensial akun kamu</div>
         </div>
 
         <!-- Pesan sukses atau error dari controller -->
-        <div th:if="${success}" class="alert alert-success"
-             style="margin-top: 16px;" th:text="${success}"></div>
-        <div th:if="${error}" class="alert alert-error"
-             style="margin-top: 16px;" th:text="${error}"></div>
+        <div th:if="${success}" class="alert alert-success">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+            <span th:text="${success}"></span>
+        </div>
+        <div th:if="${error}" class="alert alert-error">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            <span th:text="${error}"></span>
+        </div>
 
         <!-- Card profil, ditengahkan -->
         <div class="center-wrap">
-            <div class="card card-center">
+            <div class="card card-narrow">
 
-                <!-- Baris avatar besar + nama dan username -->
-                <div style="display: flex; align-items: center; gap: 14px; margin-bottom: 24px;">
-                    <div style="width: 52px; height: 52px; border-radius: 50%;
-                                background: linear-gradient(135deg, #00d2c8, #4682ff);
-                                display: flex; align-items: center; justify-content: center;
-                                font-weight: bold; font-size: 20px; color: white; flex-shrink: 0;
-                                text-transform: uppercase;"
+                <!-- Baris avatar besar + info user -->
+                <div style="display: flex; align-items: center; gap: 16px; margin-bottom: 24px;
+                            padding-bottom: 24px; border-bottom: 1px solid var(--border);">
+                    <div class="avatar avatar-lg"
                          th:text="${#strings.substring(user.namaUser, 0, 1)}">A</div>
                     <div>
-                        <div style="font-size: 18px; font-weight: bold; color: #dce8ff;"
+                        <div style="font-size: 16px; font-weight: 700; color: var(--text-1);"
                              th:text="${user.namaUser}">Nama User</div>
-                        <div style="font-size: 11px; color: #46608a;"
+                        <div style="font-size: 13px; color: var(--text-3); margin-top: 3px;"
                              th:text="'@' + ${user.username}">@username</div>
+                        <!-- Badge token -->
+                        <div style="display: inline-flex; align-items: center; gap: 5px; margin-top: 8px;
+                                    padding: 3px 10px; background: var(--primary-dim);
+                                    border-radius: 99px; font-size: 11px; color: #a5b4fc; font-weight: 600;">
+                            🪙 <span th:text="${user.token} + ' tokens'">50 tokens</span>
+                        </div>
                     </div>
                 </div>
+
+                <div class="card-title">Update Credentials</div>
 
                 <!-- Form update credentials, dikirim ke MainController.updateProfile() -->
                 <form th:action="@{/profile/update}" method="post">
 
-                    <!-- Input username baru, diisi dengan username saat ini -->
+                    <!-- Input username baru -->
                     <div class="form-group">
-                        <label class="form-label">New Username</label>
+                        <label class="form-label">Username Baru</label>
                         <input type="text"
                                name="newUsername"
                                class="form-control"
@@ -88,15 +121,16 @@
 
                     <!-- Input password baru -->
                     <div class="form-group">
-                        <label class="form-label">New Password</label>
+                        <label class="form-label">Password Baru</label>
                         <input type="password"
                                name="newPassword"
                                class="form-control"
-                               placeholder="Password baru"
+                               placeholder="Masukkan password baru"
                                required/>
                     </div>
 
-                    <button type="submit" class="btn btn-blue btn-full">
+                    <button type="submit" class="btn btn-info btn-full">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
                         Update Credentials
                     </button>
                 </form>
@@ -104,7 +138,7 @@
             </div>
         </div>
 
-    </div>
+    </main>
 
 </body>
 </html>
