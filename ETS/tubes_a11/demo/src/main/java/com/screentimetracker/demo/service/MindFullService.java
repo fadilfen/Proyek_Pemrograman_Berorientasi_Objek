@@ -1,11 +1,13 @@
 package com.screentimetracker.demo.service;
 
+import com.midtrans.httpclient.error.MidtransError;
+import com.screentimetracker.demo.model.User;
 import com.screentimetracker.demo.model.AktivitasDigital;
 import com.screentimetracker.demo.model.TopUp;
-import com.screentimetracker.demo.model.User;
+import com.screentimetracker.demo.repository.UserRepository;
 import com.screentimetracker.demo.repository.AktivitasDigitalRepository;
 import com.screentimetracker.demo.repository.TopUpRepository;
-import com.screentimetracker.demo.repository.UserRepository;
+import com.screentimetracker.demo.service.PaymentService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -25,14 +27,17 @@ public class MindFullService {
     private final UserRepository            userRepo;
     private final AktivitasDigitalRepository aktivitasRepo;
     private final TopUpRepository           topUpRepo;
+    private final PaymentService            paymentService;
 
     // Injeksi dependency melalui konstruktor (best practice Spring)
     public MindFullService(UserRepository userRepo,
                            AktivitasDigitalRepository aktivitasRepo,
-                           TopUpRepository topUpRepo) {
+                           TopUpRepository topUpRepo,
+                           PaymentService paymentService) {
         this.userRepo      = userRepo;
         this.aktivitasRepo = aktivitasRepo;
         this.topUpRepo     = topUpRepo;
+        this.paymentService = paymentService;
     }
 
     // ── AUTENTIKASI ───────────────────────────────────────────────────────
@@ -121,27 +126,118 @@ public class MindFullService {
     // ── TOP UP TOKEN ──────────────────────────────────────────────────────
 
     /**
-     * Memproses transaksi top up token untuk user.
-     * Menggantikan fungsi prosesTopUp() di TopUp.java proyek GUI.
-     * Mengembalikan false jika jumlah tidak valid (harus lebih dari 0).
+     * Hasil proses top up.
      */
-    public boolean prosesTopUp(Long userId, int jumlah, String metode) {
+    public static class TopUpResult {
+        private boolean success;
+        private String message;
+        private String snapToken; // untuk QRIS
+
+        public TopUpResult(boolean success, String message) {
+            this.success = success;
+            this.message = message;
+        }
+
+        public TopUpResult(boolean success, String message, String snapToken) {
+            this.success = success;
+            this.message = message;
+            this.snapToken = snapToken;
+        }
+
+        // Getters
+        public boolean isSuccess() { return success; }
+        public String getMessage() { return message; }
+        public String getSnapToken() { return snapToken; }
+    }
+
+    /**
+     * Memproses transaksi top up token untuk user.
+     * Jika metode QRIS, tampilkan QRIS warung statis dan simpan transaksi sebagai belum dibayar.
+     * Jika metode lain, langsung proses top up.
+     * Menggantikan fungsi prosesTopUp() di TopUp.java proyek GUI.
+     */
+    public TopUpResult prosesTopUp(Long userId, int jumlah, String metode) {
         User user = userRepo.findById(userId).orElse(null);
 
         // Validasi: user harus ada dan jumlah harus lebih dari 0
-        if (user == null || jumlah <= 0) return false;
+        if (user == null || jumlah <= 0) {
+            return new TopUpResult(false, "User tidak ditemukan atau jumlah tidak valid.");
+        }
 
-        // Simpan riwayat transaksi top up
-        TopUp topUp = new TopUp(jumlah, metode, user);
-        topUpRepo.save(topUp);
+        if ("QRIS (Instant)".equals(metode)) {
+            // Untuk QRIS sederhana, tampilkan QR code warung statis dan simpan transaksi sebagai belum dibayar
+            TopUp topUp = new TopUp(jumlah, metode, user);
+            topUpRepo.save(topUp);
 
-        // Tambahkan token ke saldo user
-        user.setToken(user.getToken() + jumlah);
+            return new TopUpResult(true, "QRIS siap. Silakan scan QR code warung.", "qris-warung.png");
+        } else {
+            // Untuk metode lain, langsung proses
+            TopUp topUp = new TopUp(jumlah, metode, user);
+            topUpRepo.save(topUp);
+
+            user.setToken(user.getToken() + jumlah);
+            userRepo.save(user);
+            return new TopUpResult(true, "Top up berhasil! Token telah ditambahkan.");
+        }
+    }
+
+    /**
+     * Konfirmasi top up QRIS manual: kredit token untuk top up QRIS terakhir yang belum dibayar.
+     */
+    public boolean confirmQrisTopUp(Long userId) {
+        User user = userRepo.findById(userId).orElse(null);
+        if (user == null) return false;
+
+        Optional<TopUp> latestOpt = topUpRepo.findTopByUserOrderByWaktuTopUpDesc(user);
+        if (latestOpt.isEmpty()) return false;
+
+        TopUp latest = latestOpt.get();
+        if (!"QRIS (Instant)".equals(latest.getMetodePembayaran()) || latest.isPaid()) {
+            return false;
+        }
+
+        user.setToken(user.getToken() + latest.getJumlahKoin());
+        latest.setPaid(true);
         userRepo.save(user);
+        topUpRepo.save(latest);
         return true;
     }
 
     // ── LAPORAN HARIAN ────────────────────────────────────────────────────
+
+    /**
+     * Handle pembayaran berhasil dari Midtrans.
+     * Update token user berdasarkan order_id.
+     */
+    public boolean handlePaymentSuccess(String orderId) {
+        // Parse orderId: "TOPUP-{userId}-{random}"
+        if (!orderId.startsWith("TOPUP-")) return false;
+
+        String[] parts = orderId.split("-");
+        if (parts.length < 3) return false;
+
+        try {
+            Long userId = Long.parseLong(parts[1]);
+            User user = userRepo.findById(userId).orElse(null);
+            if (user == null) return false;
+
+            // Cari topup terbaru untuk user ini dengan metode QRIS yang belum paid
+            TopUp latestTopUp = topUpRepo.findTopByUserOrderByWaktuTopUpDesc(user)
+                    .filter(t -> "QRIS (Instant)".equals(t.getMetodePembayaran()) && !t.isPaid())
+                    .orElse(null);
+
+            if (latestTopUp != null) {
+                user.setToken(user.getToken() + latestTopUp.getJumlahKoin());
+                userRepo.save(user);
+                latestTopUp.setPaid(true);
+                topUpRepo.save(latestTopUp);
+                return true;
+            }
+        } catch (Exception e) {
+            return false;
+        }
+        return false;
+    }
 
     /**
      * Menghasilkan laporan harian dalam bentuk teks.

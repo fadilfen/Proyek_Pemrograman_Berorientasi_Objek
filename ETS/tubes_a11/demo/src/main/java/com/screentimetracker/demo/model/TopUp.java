@@ -26,6 +26,9 @@ public class TopUp {
     // Waktu transaksi top up dilakukan
     private LocalDateTime waktuTopUp;
 
+    // Status pembayaran (untuk QRIS)
+    private boolean isPaid;
+
     // Relasi many-to-one ke tabel users (setiap top up milik satu user)
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")
@@ -40,6 +43,7 @@ public class TopUp {
         this.metodePembayaran  = metodePembayaran;
         this.user              = user;
         this.waktuTopUp        = LocalDateTime.now();
+        this.isPaid            = !"QRIS (Instant)".equals(metodePembayaran); // QRIS belum paid, lainnya langsung paid
     }
 
     /**
@@ -50,15 +54,22 @@ public class TopUp {
         return jumlahKoin > 0;
     }
 
-    // ── Getter dan Setter ─────────────────────────────────────────────────
+    // Getters and Setters
+    public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
 
-    public Long getId()                                    { return id; }
-    public int getJumlahKoin()                             { return jumlahKoin; }
-    public void setJumlahKoin(int jumlahKoin)              { this.jumlahKoin = jumlahKoin; }
-    public String getMetodePembayaran()                    { return metodePembayaran; }
-    public void setMetodePembayaran(String metode)         { this.metodePembayaran = metode; }
-    public LocalDateTime getWaktuTopUp()                   { return waktuTopUp; }
-    public void setWaktuTopUp(LocalDateTime waktuTopUp)    { this.waktuTopUp = waktuTopUp; }
-    public User getUser()                                  { return user; }
-    public void setUser(User user)                         { this.user = user; }
+    public int getJumlahKoin() { return jumlahKoin; }
+    public void setJumlahKoin(int jumlahKoin) { this.jumlahKoin = jumlahKoin; }
+
+    public String getMetodePembayaran() { return metodePembayaran; }
+    public void setMetodePembayaran(String metodePembayaran) { this.metodePembayaran = metodePembayaran; }
+
+    public LocalDateTime getWaktuTopUp() { return waktuTopUp; }
+    public void setWaktuTopUp(LocalDateTime waktuTopUp) { this.waktuTopUp = waktuTopUp; }
+
+    public boolean isPaid() { return isPaid; }
+    public void setPaid(boolean paid) { this.isPaid = paid; }
+
+    public User getUser() { return user; }
+    public void setUser(User user) { this.user = user; }
 }

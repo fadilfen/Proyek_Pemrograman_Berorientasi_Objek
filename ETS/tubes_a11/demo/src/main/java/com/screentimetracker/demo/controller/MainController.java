@@ -9,6 +9,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
@@ -131,6 +132,19 @@ public class MainController {
         return "topup";
     }
 
+    @GetMapping("/topup/proses")
+    public String topupProsesGet(HttpSession session) {
+        if (!isLoggedIn(session)) return "redirect:/login";
+        return "redirect:/topup";
+    }
+
+    @GetMapping("/topup/confirm")
+    public String topupConfirmGet(HttpSession session, RedirectAttributes ra) {
+        if (!isLoggedIn(session)) return "redirect:/login";
+        ra.addFlashAttribute("error", "Gunakan tombol konfirmasi pembayaran, tidak akses langsung.");
+        return "redirect:/topup";
+    }
+
     /**
      * Memproses transaksi top up token yang dikirim dari form.
      */
@@ -138,15 +152,25 @@ public class MainController {
     public String prosesTopUp(HttpSession session,
                               @RequestParam int jumlahKoin,
                               @RequestParam String metodePembayaran,
-                              RedirectAttributes ra) {
+                              RedirectAttributes ra,
+                              Model model) {
         if (!isLoggedIn(session)) return "redirect:/login";
 
-        boolean berhasil = service.prosesTopUp(getUserId(session), jumlahKoin, metodePembayaran);
+        MindFullService.TopUpResult result = service.prosesTopUp(getUserId(session), jumlahKoin, metodePembayaran);
 
-        if (berhasil) {
-            ra.addFlashAttribute("success", "Top up berhasil! Token telah ditambahkan.");
+        if (result.isSuccess()) {
+            if (result.getSnapToken() != null) {
+                // Untuk QRIS, tampilkan halaman QR code
+                model.addAttribute("user", service.getUser(getUserId(session)));
+                model.addAttribute("snapToken", result.getSnapToken());
+                model.addAttribute("jumlahKoin", jumlahKoin);
+                model.addAttribute("totalHarga", jumlahKoin * 1000); // 1000 per token
+                return "qris_payment"; // halaman baru untuk QRIS
+            } else {
+                ra.addFlashAttribute("success", result.getMessage());
+            }
         } else {
-            ra.addFlashAttribute("error", "Jumlah tidak valid! Masukkan angka lebih dari 0.");
+            ra.addFlashAttribute("error", result.getMessage());
         }
         return "redirect:/topup";
     }
@@ -193,10 +217,56 @@ public class MainController {
         return "profile";
     }
 
+    @PostMapping("/topup/confirm")
+    public String confirmTopUp(HttpSession session, RedirectAttributes ra) {
+        if (!isLoggedIn(session)) return "redirect:/login";
+
+        boolean success = service.confirmQrisTopUp(getUserId(session));
+        if (success) {
+            ra.addFlashAttribute("success", "Pembayaran QRIS dikonfirmasi. Token telah ditambahkan.");
+        } else {
+            ra.addFlashAttribute("error", "Konfirmasi pembayaran QRIS gagal. Pastikan Anda belum mengonfirmasi top up sebelumnya.");
+        }
+        return "redirect:/dashboard";
+    }
+
     /**
-     * Memproses pembaruan username dan password pengguna.
-     * Setara dengan tombol "Update Credentials" di proyek GUI.
+     * Handle notification callback dari Midtrans untuk update status pembayaran.
      */
+    @PostMapping("/payment/notification")
+    public String handlePaymentNotification(@RequestBody String notificationBody) {
+        // Parse notification JSON sederhana
+        // Dalam implementasi nyata, gunakan library JSON dan verifikasi signature
+
+        String orderId = null;
+        String transactionStatus = null;
+
+        // Ekstrak order_id dan transaction_status dari body
+        if (notificationBody.contains("order_id")) {
+            int start = notificationBody.indexOf("\"order_id\":\"") + 12;
+            int end = notificationBody.indexOf("\"", start);
+            if (start > 11 && end > start) {
+                orderId = notificationBody.substring(start, end);
+            }
+        }
+
+        if (notificationBody.contains("transaction_status")) {
+            int start = notificationBody.indexOf("\"transaction_status\":\"") + 22;
+            int end = notificationBody.indexOf("\"", start);
+            if (start > 21 && end > start) {
+                transactionStatus = notificationBody.substring(start, end);
+            }
+        }
+
+        if (orderId != null && "settlement".equals(transactionStatus)) {
+            boolean success = service.handlePaymentSuccess(orderId);
+            if (success) {
+                // Log success
+            }
+        }
+
+        return "OK";
+    }
     @PostMapping("/profile/update")
     public String updateProfile(HttpSession session,
                                 @RequestParam String newUsername,
