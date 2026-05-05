@@ -1,0 +1,19 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "java",
+            "name": "Run MindFull GUI",
+            "request": "launch",
+            "mainClass": "tubes_a11.Main",
+            "classPaths": [
+                "${workspaceFolder}/gui/bin",
+                "${workspaceFolder}/gui/lib/mysql-connector.jar"
+            ],
+            "sourcePaths": [
+                "${workspaceFolder}/gui/src"
+            ],
+            "cwd": "${workspaceFolder}"
+        }
+    ]
+}
