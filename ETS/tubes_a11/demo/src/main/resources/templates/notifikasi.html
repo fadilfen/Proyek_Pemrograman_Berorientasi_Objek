@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-    <title>Health Report – MindFull</title>
-    <meta name="description" content="Laporan harian kesehatan digital pengguna MindFull"/>
+    <title>Notifikasi – MindFull</title>
+    <meta name="description" content="Pusat notifikasi dan peringatan screen time MindFull"/>
     <link rel="preconnect" href="https://fonts.googleapis.com"/>
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous"/>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
@@ -45,7 +45,7 @@
             <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
             Top Up Balance
         </a>
-        <a th:href="@{/report}" class="nav-item active">
+        <a th:href="@{/report}" class="nav-item">
             <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
             Health Report
         </a>
@@ -53,7 +53,7 @@
             <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
             Profile
         </a>
-        <a th:href="@{/notifikasi}" class="nav-item">
+        <a th:href="@{/notifikasi}" class="nav-item active">
             <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
             Notifikasi
         </a>
@@ -72,72 +72,44 @@
     <main class="main">
 
         <div class="page-header">
-            <div class="page-judul">Health Report</div>
-            <div class="page-sub">Ringkasan kesehatan digital harian kamu</div>
+            <div class="page-judul">Notifikasi</div>
+            <div class="page-sub">Pesan peringatan dan informasi screen time kamu</div>
         </div>
 
-        <!-- ── Kartu Laporan Hari Ini (Realtime) ── -->
-        <div class="card card-print" style="margin-bottom: 20px;">
+        <!-- Card daftar notifikasi -->
+        <div class="card">
+            <!-- Header dengan jumlah notifikasi -->
             <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px;">
-                <div class="card-title" style="margin-bottom: 0;">Summary Report</div>
-                <button type="button" class="btn btn-primary print-btn" onclick="window.print()">
-                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
-                    Print / Export PDF
-                </button>
-            </div>
-
-            <!-- Kotak laporan realtime -->
-            <div class="report-box print-content" th:text="${laporan}"></div>
-        </div>
-
-        <!-- ── Tabel Riwayat Laporan Harian ── -->
-        <div class="card card-print">
-            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px;">
-                <div class="card-title" style="margin-bottom: 0;">Riwayat Laporan Harian</div>
+                <div class="card-title" style="margin-bottom: 0;">Semua Notifikasi</div>
                 <span style="font-size: 12px; color: var(--text-3);"
-                      th:text="${#lists.size(laporanList)} + ' laporan'">0 laporan</span>
+                      th:text="${#lists.size(notifikasiList)} + ' pesan'">0 pesan</span>
             </div>
 
-            <div class="table-wrapper">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Tanggal</th>
-                            <th>Total Screen Time</th>
-                            <th>Skor Harian</th>
-                            <th>Status Kesehatan</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <!-- Iterasi riwayat laporan dari tabel laporan_harian -->
-                        <tr th:each="lap : ${laporanList}">
-                            <td th:text="${#temporals.format(lap.tanggal, 'dd MMM yyyy')}">-</td>
-                            <td th:text="${lap.totalDurasi} + ' menit'">0 menit</td>
-                            <td>
-                                <span th:text="${lap.skorHarian}"
-                                      th:style="${lap.skorHarian >= 70} ? 'color: var(--success); font-weight: 700;' : 'color: var(--danger); font-weight: 700;'">
-                                    0
-                                </span>
-                                <span style="color: var(--text-3); font-size: 11px;"> /100</span>
-                            </td>
-                            <td>
-                                <span th:if="${lap.skorHarian >= 70}" class="badge badge-success">✓ Sehat</span>
-                                <span th:if="${lap.skorHarian < 70}"  class="badge badge-danger">⚠ Kurangi Screen Time</span>
-                            </td>
-                        </tr>
+            <!-- Daftar notifikasi -->
+            <div th:if="${!#lists.isEmpty(notifikasiList)}">
+                <div th:each="notif : ${notifikasiList}" class="notif-item">
+                    <div class="notif-icon"
+                         th:text="${#strings.contains(notif.pesan, '✅')} ? '✅' :
+                                   (${#strings.contains(notif.pesan, '⚠️')} ? '⚠️' : 'ℹ️')">ℹ️</div>
+                    <div class="notif-body">
+                        <div class="notif-pesan" th:text="${notif.pesan}">Pesan notifikasi</div>
+                        <div class="notif-waktu"
+                             th:text="${#temporals.format(notif.createdAt, 'dd MMM yyyy, HH:mm')}">Waktu</div>
+                    </div>
+                </div>
+            </div>
 
-                                <!-- Empty state jika belum ada riwayat laporan -->
-                        <tr th:if="${#lists.isEmpty(laporanList)}">
-                            <td colspan="4">
-                                <div class="empty-state">
-                                    <div style="font-size: 32px; margin-bottom: 8px;">📭</div>
-                                    Belum ada riwayat laporan.<br/>
-                                    <span style="color: var(--text-3);">Tambahkan aktivitas untuk melihat laporan harian.</span>
-                                </div>
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
+            <!-- Empty state jika belum ada notifikasi -->
+            <div th:if="${#lists.isEmpty(notifikasiList)}"
+                 style="display: flex; flex-direction: column; align-items: center;
+                        padding: 48px 20px; color: var(--text-3);">
+                <div style="font-size: 40px; margin-bottom: 12px;">🔔</div>
+                <div style="font-size: 14px; font-weight: 500; color: var(--text-2); margin-bottom: 6px;">
+                    Belum ada notifikasi
+                </div>
+                <div style="font-size: 13px;">
+                    Notifikasi akan muncul ketika screen time kamu melebihi batas atau ada transaksi top up.
+                </div>
             </div>
         </div>
 

@@ -1,6 +1,8 @@
 package com.screentimetracker.demo.controller;
 
 import com.screentimetracker.demo.model.AktivitasDigital;
+import com.screentimetracker.demo.model.LaporanHarian;
+import com.screentimetracker.demo.model.Notifikasi;
 import com.screentimetracker.demo.model.User;
 import com.screentimetracker.demo.service.MindFullService;
 import jakarta.servlet.http.HttpSession;
@@ -9,7 +11,6 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
@@ -18,7 +19,7 @@ import java.util.List;
 
 /**
  * MainController menangani semua halaman utama setelah user login:
- * Dashboard, Activity Tracker, Top Up, Health Report, dan Profile.
+ * Dashboard, Activity Tracker, Top Up, Health Report, Profile, dan Notifikasi.
  * Menggantikan semua method showXxxPage() di MentalWellbeingApp.java proyek GUI.
  */
 @Controller
@@ -44,7 +45,7 @@ public class MainController {
 
     /**
      * Menampilkan halaman dashboard dengan statistik:
-     * token, wellness score, dan total screen time.
+     * token, wellness score, total screen time, dan notifikasi terbaru.
      * Setara dengan showHomePage() di proyek GUI.
      */
     @GetMapping("/dashboard")
@@ -68,10 +69,14 @@ public class MainController {
         }
         score = Math.max(0, score);
 
+        // Ambil notifikasi terbaru untuk ditampilkan di dashboard
+        List<Notifikasi> notifikasiList = service.getNotifikasiByUser(userId);
+
         model.addAttribute("user",            user);
         model.addAttribute("totalScreenTime", totalScreenTime);
         model.addAttribute("score",           score);
         model.addAttribute("today",           LocalDate.now());
+        model.addAttribute("notifikasiList",  notifikasiList);
         return "dashboard";
     }
 
@@ -97,6 +102,7 @@ public class MainController {
     /**
      * Memproses form penambahan aktivitas digital baru.
      * Memotong 5 token dari saldo user setiap kali log aktivitas.
+     * Otomatis kirim notifikasi jika screen time >= 120 menit.
      */
     @PostMapping("/activity/add")
     public String addActivity(HttpSession session,
@@ -162,7 +168,7 @@ public class MainController {
             if (result.getSnapToken() != null) {
                 // Untuk QRIS, tampilkan halaman QR code
                 model.addAttribute("user", service.getUser(getUserId(session)));
-                model.addAttribute("snapToken", result.getSnapToken());
+                model.addAttribute("snapToken",  result.getSnapToken());
                 model.addAttribute("jumlahKoin", jumlahKoin);
                 model.addAttribute("totalHarga", jumlahKoin * 1000); // 1000 per token
                 return "qris_payment"; // halaman baru untuk QRIS
@@ -175,31 +181,33 @@ public class MainController {
         return "redirect:/topup";
     }
 
+    @PostMapping("/topup/confirm")
+    public String confirmTopUp(HttpSession session, RedirectAttributes ra) {
+        if (!isLoggedIn(session)) return "redirect:/login";
+
+        boolean success = service.confirmQrisTopUp(getUserId(session));
+        if (success) {
+            ra.addFlashAttribute("success", "Pembayaran QRIS dikonfirmasi. Token telah ditambahkan.");
+        } else {
+            ra.addFlashAttribute("error", "Konfirmasi pembayaran QRIS gagal. Pastikan Anda belum mengonfirmasi top up sebelumnya.");
+        }
+        return "redirect:/dashboard";
+    }
+
     // ── HEALTH REPORT ─────────────────────────────────────────────────────
 
     /**
-     * Menampilkan halaman health report.
-     * Setara dengan showReportPage() di proyek GUI.
+     * Menampilkan halaman health report (realtime).
+     * Laporan harian di-generate otomatis setiap halaman dimuat.
      */
     @GetMapping("/report")
     public String reportPage(HttpSession session, Model model) {
         if (!isLoggedIn(session)) return "redirect:/login";
 
-        model.addAttribute("user", service.getUser(getUserId(session)));
-        return "report";
-    }
-
-    /**
-     * Menghasilkan dan menampilkan laporan harian pengguna.
-     * Setara dengan tombol "Generate Summary Report" di proyek GUI.
-     */
-    @PostMapping("/report/generate")
-    public String generateReport(HttpSession session, Model model) {
-        if (!isLoggedIn(session)) return "redirect:/login";
-
         Long userId = getUserId(session);
-        model.addAttribute("user",    service.getUser(userId));
-        model.addAttribute("laporan", service.generateLaporan(userId));
+        model.addAttribute("user",        service.getUser(userId));
+        model.addAttribute("laporan",     service.generateLaporan(userId));
+        model.addAttribute("laporanList", service.getLaporanByUser(userId));
         return "report";
     }
 
@@ -217,56 +225,6 @@ public class MainController {
         return "profile";
     }
 
-    @PostMapping("/topup/confirm")
-    public String confirmTopUp(HttpSession session, RedirectAttributes ra) {
-        if (!isLoggedIn(session)) return "redirect:/login";
-
-        boolean success = service.confirmQrisTopUp(getUserId(session));
-        if (success) {
-            ra.addFlashAttribute("success", "Pembayaran QRIS dikonfirmasi. Token telah ditambahkan.");
-        } else {
-            ra.addFlashAttribute("error", "Konfirmasi pembayaran QRIS gagal. Pastikan Anda belum mengonfirmasi top up sebelumnya.");
-        }
-        return "redirect:/dashboard";
-    }
-
-    /**
-     * Handle notification callback dari Midtrans untuk update status pembayaran.
-     */
-    @PostMapping("/payment/notification")
-    public String handlePaymentNotification(@RequestBody String notificationBody) {
-        // Parse notification JSON sederhana
-        // Dalam implementasi nyata, gunakan library JSON dan verifikasi signature
-
-        String orderId = null;
-        String transactionStatus = null;
-
-        // Ekstrak order_id dan transaction_status dari body
-        if (notificationBody.contains("order_id")) {
-            int start = notificationBody.indexOf("\"order_id\":\"") + 12;
-            int end = notificationBody.indexOf("\"", start);
-            if (start > 11 && end > start) {
-                orderId = notificationBody.substring(start, end);
-            }
-        }
-
-        if (notificationBody.contains("transaction_status")) {
-            int start = notificationBody.indexOf("\"transaction_status\":\"") + 22;
-            int end = notificationBody.indexOf("\"", start);
-            if (start > 21 && end > start) {
-                transactionStatus = notificationBody.substring(start, end);
-            }
-        }
-
-        if (orderId != null && "settlement".equals(transactionStatus)) {
-            boolean success = service.handlePaymentSuccess(orderId);
-            if (success) {
-                // Log success
-            }
-        }
-
-        return "OK";
-    }
     @PostMapping("/profile/update")
     public String updateProfile(HttpSession session,
                                 @RequestParam String newUsername,
@@ -284,5 +242,20 @@ public class MainController {
             ra.addFlashAttribute("error", "Username sudah digunakan oleh akun lain!");
         }
         return "redirect:/profile";
+    }
+
+    // ── NOTIFIKASI ────────────────────────────────────────────────────────
+
+    /**
+     * Menampilkan halaman notifikasi pengguna.
+     */
+    @GetMapping("/notifikasi")
+    public String notifikasiPage(HttpSession session, Model model) {
+        if (!isLoggedIn(session)) return "redirect:/login";
+
+        Long userId = getUserId(session);
+        model.addAttribute("user",           service.getUser(userId));
+        model.addAttribute("notifikasiList", service.getNotifikasiByUser(userId));
+        return "notifikasi";
     }
 }

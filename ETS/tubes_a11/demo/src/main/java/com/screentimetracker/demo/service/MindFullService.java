@@ -1,13 +1,15 @@
 package com.screentimetracker.demo.service;
 
-import com.midtrans.httpclient.error.MidtransError;
-import com.screentimetracker.demo.model.User;
 import com.screentimetracker.demo.model.AktivitasDigital;
+import com.screentimetracker.demo.model.LaporanHarian;
+import com.screentimetracker.demo.model.Notifikasi;
 import com.screentimetracker.demo.model.TopUp;
-import com.screentimetracker.demo.repository.UserRepository;
+import com.screentimetracker.demo.model.User;
 import com.screentimetracker.demo.repository.AktivitasDigitalRepository;
+import com.screentimetracker.demo.repository.LaporanHarianRepository;
+import com.screentimetracker.demo.repository.NotifikasiRepository;
 import com.screentimetracker.demo.repository.TopUpRepository;
-import com.screentimetracker.demo.service.PaymentService;
+import com.screentimetracker.demo.repository.UserRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -18,26 +20,29 @@ import java.util.Optional;
 /**
  * MindFullService adalah lapisan service yang menangani semua logika bisnis aplikasi.
  * Menggabungkan fungsi-fungsi dari UserManager, User, AktivitasDigital,
- * TopUp, dan LaporanHarian yang ada di proyek GUI ke dalam satu service terpusat.
+ * TopUp, LaporanHarian, dan Notifikasi yang ada di proyek GUI ke dalam satu service terpusat.
  */
 @Service
 @Transactional
 public class MindFullService {
 
-    private final UserRepository            userRepo;
+    private final UserRepository             userRepo;
     private final AktivitasDigitalRepository aktivitasRepo;
-    private final TopUpRepository           topUpRepo;
-    private final PaymentService            paymentService;
+    private final TopUpRepository            topUpRepo;
+    private final NotifikasiRepository       notifikasiRepo;
+    private final LaporanHarianRepository    laporanRepo;
 
     // Injeksi dependency melalui konstruktor (best practice Spring)
     public MindFullService(UserRepository userRepo,
                            AktivitasDigitalRepository aktivitasRepo,
                            TopUpRepository topUpRepo,
-                           PaymentService paymentService) {
-        this.userRepo      = userRepo;
-        this.aktivitasRepo = aktivitasRepo;
-        this.topUpRepo     = topUpRepo;
-        this.paymentService = paymentService;
+                           NotifikasiRepository notifikasiRepo,
+                           LaporanHarianRepository laporanRepo) {
+        this.userRepo       = userRepo;
+        this.aktivitasRepo  = aktivitasRepo;
+        this.topUpRepo      = topUpRepo;
+        this.notifikasiRepo = notifikasiRepo;
+        this.laporanRepo    = laporanRepo;
     }
 
     // ── AUTENTIKASI ───────────────────────────────────────────────────────
@@ -99,6 +104,7 @@ public class MindFullService {
      * Menambahkan aktivitas digital baru dan memotong 5 token dari user.
      * Menggantikan fungsi tambahAktivitas() di User.java proyek GUI.
      * Mengembalikan false jika token tidak cukup (minimal 5 token).
+     * Setelah berhasil, otomatis kirim notifikasi jika screen time melebihi batas.
      */
     public boolean tambahAktivitas(Long userId, String namaAplikasi,
                                    int durasi, int batas, LocalDate tanggal) {
@@ -113,6 +119,17 @@ public class MindFullService {
         // Kurangi 5 token setelah berhasil log aktivitas
         user.setToken(user.getToken() - 5);
         userRepo.save(user);
+
+        // Hitung total screen time setelah aktivitas ditambahkan
+        List<AktivitasDigital> semuaAktivitas = aktivitasRepo.findByUserId(userId);
+        int totalMenit = semuaAktivitas.stream().mapToInt(AktivitasDigital::getDurasiMenit).sum();
+
+        // Kirim notifikasi jika screen time >= 120 menit
+        if (totalMenit >= 120) {
+            String pesan = Notifikasi.kirimPeringatan(totalMenit);
+            notifikasiRepo.save(new Notifikasi(pesan, user));
+        }
+
         return true;
     }
 
@@ -139,15 +156,15 @@ public class MindFullService {
         }
 
         public TopUpResult(boolean success, String message, String snapToken) {
-            this.success = success;
-            this.message = message;
+            this.success   = success;
+            this.message   = message;
             this.snapToken = snapToken;
         }
 
         // Getters
-        public boolean isSuccess() { return success; }
-        public String getMessage() { return message; }
-        public String getSnapToken() { return snapToken; }
+        public boolean isSuccess()      { return success; }
+        public String getMessage()      { return message; }
+        public String getSnapToken()    { return snapToken; }
     }
 
     /**
@@ -177,6 +194,11 @@ public class MindFullService {
 
             user.setToken(user.getToken() + jumlah);
             userRepo.save(user);
+
+            // Kirim notifikasi konfirmasi top up
+            String pesan = "✅ Top up berhasil! " + jumlah + " token ditambahkan melalui " + metode + ".";
+            notifikasiRepo.save(new Notifikasi(pesan, user));
+
             return new TopUpResult(true, "Top up berhasil! Token telah ditambahkan.");
         }
     }
@@ -200,13 +222,18 @@ public class MindFullService {
         latest.setPaid(true);
         userRepo.save(user);
         topUpRepo.save(latest);
+
+        // Kirim notifikasi konfirmasi pembayaran QRIS
+        String pesan = "✅ Pembayaran QRIS dikonfirmasi! " + latest.getJumlahKoin() + " token berhasil ditambahkan.";
+        notifikasiRepo.save(new Notifikasi(pesan, user));
+
         return true;
     }
 
     // ── LAPORAN HARIAN ────────────────────────────────────────────────────
 
     /**
-     * Handle pembayaran berhasil dari Midtrans.
+     * Handle pembayaran berhasil dari notifikasi manual.
      * Update token user berdasarkan order_id.
      */
     public boolean handlePaymentSuccess(String orderId) {
@@ -240,8 +267,9 @@ public class MindFullService {
     }
 
     /**
-     * Menghasilkan laporan harian dalam bentuk teks.
+     * Menghasilkan laporan harian dalam bentuk teks dan menyimpannya ke database.
      * Menggantikan fungsi generateLaporan() di LaporanHarian.java proyek GUI.
+     * Juga menyimpan laporan ke tabel laporan_harian untuk riwayat.
      */
     public String generateLaporan(Long userId) {
         User user = userRepo.findById(userId).orElse(null);
@@ -260,24 +288,38 @@ public class MindFullService {
         }
         score = Math.max(0, score);
 
-        // Susun teks laporan
-        StringBuilder sb = new StringBuilder();
-        sb.append("=== LAPORAN HARIAN ===\n");
-        sb.append("Nama User         : ").append(user.getNamaUser()).append("\n");
-        if (!list.isEmpty()) {
-            sb.append("Tanggal           : ").append(list.get(0).getTanggal()).append("\n");
+        // Simpan atau update laporan harian ke database
+        LocalDate today = LocalDate.now();
+        Optional<LaporanHarian> existingLaporan = laporanRepo.findByUserIdAndTanggal(userId, today);
+        LaporanHarian laporan;
+        if (existingLaporan.isPresent()) {
+            // Update laporan yang sudah ada
+            laporan = existingLaporan.get();
+            laporan.setTotalDurasi(totalDurasi);
+            laporan.setSkorHarian(score);
+        } else {
+            // Buat laporan baru untuk hari ini
+            laporan = new LaporanHarian(totalDurasi, score, today, user);
         }
-        sb.append("------------------------------\n");
-        sb.append("Detail Aplikasi:\n");
-        for (AktivitasDigital a : list) {
-            sb.append("- ").append(a.getNamaAplikasi())
-              .append(" : ").append(a.getDurasiMenit()).append(" menit\n");
-        }
-        sb.append("------------------------------\n");
-        sb.append("Total Screen Time : ").append(totalDurasi).append(" menit\n");
-        sb.append("Skor Harian       : ").append(score).append("\n");
-        sb.append("Status            : ").append(score >= 70 ? "Sehat" : "Kurangi Screen Time");
+        laporanRepo.save(laporan);
 
-        return sb.toString();
+        // Gunakan metode generateLaporan() dari entity LaporanHarian (sesuai implementasi GUI)
+        return laporan.generateLaporan(list);
+    }
+
+    // ── NOTIFIKASI ────────────────────────────────────────────────────────
+
+    /**
+     * Mengambil semua notifikasi milik user tertentu, terbaru dulu.
+     */
+    public List<Notifikasi> getNotifikasiByUser(Long userId) {
+        return notifikasiRepo.findByUserIdOrderByCreatedAtDesc(userId);
+    }
+
+    /**
+     * Mengambil semua laporan harian milik user, terbaru dulu.
+     */
+    public List<LaporanHarian> getLaporanByUser(Long userId) {
+        return laporanRepo.findByUserIdOrderByTanggalDesc(userId);
     }
 }

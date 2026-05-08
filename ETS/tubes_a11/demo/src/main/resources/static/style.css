@@ -702,3 +702,191 @@ tbody tr:last-child td { border-bottom: none; }
 .score-ring-num  { font-size: 22px; font-weight: 700; color: var(--text-1); }
 .score-ring-sub  { font-size: 10px; color: var(--text-3); margin-top: 1px; }
 .score-ring-label { font-size: 12px; color: var(--text-2); margin-top: 10px; font-weight: 500; }
+
+/* ============================================================
+   NOTIFIKASI
+   ============================================================ */
+
+/* Item notifikasi dalam daftar */
+.notif-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    padding: 14px 16px;
+    border-radius: 12px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    margin-bottom: 10px;
+    transition: var(--transition);
+}
+
+.notif-item:hover {
+    border-color: var(--border-hover);
+    background: rgba(255, 255, 255, 0.02);
+}
+
+.notif-item:last-child { margin-bottom: 0; }
+
+/* Ikon notifikasi (emoji) */
+.notif-icon {
+    font-size: 18px;
+    flex-shrink: 0;
+    margin-top: 2px;
+    width: 28px;
+    text-align: center;
+}
+
+/* Konten teks notifikasi */
+.notif-body { flex: 1; min-width: 0; }
+
+.notif-pesan {
+    font-size: 13px;
+    color: var(--text-1);
+    line-height: 1.5;
+    word-break: break-word;
+}
+
+.notif-waktu {
+    font-size: 11px;
+    color: var(--text-3);
+    margin-top: 4px;
+}
+
+/* ── Tombol secondary (abu-abu) ── */
+.btn-secondary {
+    background: var(--surface-2);
+    color: var(--text-2);
+    border: 1px solid var(--border);
+}
+
+.btn-secondary:hover {
+    background: var(--surface);
+    color: var(--text-1);
+    border-color: var(--border-hover);
+}
+
+/* ── Ringkasan pembayaran QRIS ── */
+.payment-summary {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px 16px;
+    margin-bottom: 20px;
+}
+
+.summary-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 6px 0;
+    font-size: 13px;
+    color: var(--text-2);
+    border-bottom: 1px solid var(--border);
+}
+
+.summary-row:last-child { border-bottom: none; }
+
+.summary-row.total {
+    font-weight: 700;
+    font-size: 14px;
+    color: var(--text-1);
+    padding-top: 10px;
+    margin-top: 4px;
+}
+
+/* Instruksi pembayaran QRIS */
+.qris-instructions {
+    background: var(--primary-dim);
+    border: 1px solid rgba(99, 102, 241, 0.15);
+    border-radius: 10px;
+    padding: 14px 16px;
+    margin-bottom: 20px;
+    font-size: 12px;
+    color: #a5b4fc;
+    line-height: 1.8;
+}
+
+.payment-actions {
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+}
+
+/* ============================================================
+   PRINT STYLES — Untuk Export PDF via browser
+   ============================================================ */
+@media print {
+    /* Sembunyikan elemen yang tidak perlu di print */
+    .sidebar,
+    .print-btn,
+    .btn {
+        display: none !important;
+    }
+
+    /* Background jadi putih untuk hemat tinta */
+    body {
+        background: white !important;
+        color: #1a1a1a !important;
+    }
+
+    /* Konten utama full width */
+    .main {
+        padding: 0 !important;
+        margin: 0 !important;
+    }
+
+    /* Card tanpa shadow dan border gelap */
+    .card-print {
+        background: white !important;
+        border: 1px solid #ddd !important;
+        box-shadow: none !important;
+        border-radius: 8px !important;
+        padding: 20px !important;
+        margin-bottom: 20px !important;
+    }
+
+    /* Report box jadi teks gelap */
+    .print-content {
+        background: #f8f9fa !important;
+        border: 1px solid #e0e0e0 !important;
+        color: #1a1a1a !important;
+        border-radius: 6px !important;
+    }
+
+    /* Tabel print-friendly */
+    table {
+        border-color: #ddd !important;
+    }
+
+    th, td {
+        border-color: #ddd !important;
+        color: #1a1a1a !important;
+    }
+
+    th {
+        background: #f0f0f0 !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+
+    /* Badge jadi solid color */
+    .badge-success {
+        background: #22c55e !important;
+        color: white !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+
+    .badge-danger {
+        background: #ef4444 !important;
+        color: white !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+
+    /* Page setup untuk PDF */
+    @page {
+        size: A4;
+        margin: 15mm;
+    }
+}
