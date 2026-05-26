@@ -73,13 +73,36 @@
 
         <div class="page-header">
             <div class="page-judul">Health Report</div>
-            <div class="page-sub">Ringkasan kesehatan digital harian kamu</div>
+            <div class="page-sub">Ringkasan kesehatan digital harian <span th:text="${targetUser != null && targetUser.id != user.id ? 'anak kamu' : 'kamu'}">kamu</span></div>
+        </div>
+
+        <!-- ── Pilihan Anak (Hanya untuk Orang Tua) ── -->
+        <div th:if="${user.role.name() == 'ORANG_TUA'}" class="card" style="margin-bottom: 24px;">
+            <div class="card-title" style="margin-bottom: 12px; font-size: 15px;">Pantau Report Anak</div>
+            <form th:action="@{/report}" method="get" style="display: flex; flex-direction: column; gap: 8px;">
+                <label class="form-label" style="margin-bottom: 0;">Sedang melihat Report milik:</label>
+                <div style="display: flex; gap: 8px;">
+                    <select name="anakId" class="form-control" style="flex: 1;" onchange="this.form.submit()">
+                        <option th:value="${user.id}" th:selected="${selectedAnakId == null || selectedAnakId == user.id}">Akun Saya Sendiri</option>
+                        <option th:each="anak : ${anakList}"
+                                th:value="${anak.id}"
+                                th:text="${anak.namaUser + ' (@' + anak.username + ')'}"
+                                th:selected="${selectedAnakId == anak.id}"></option>
+                    </select>
+                    <noscript><button type="submit" class="btn btn-primary" style="padding: 0 16px;">Lihat</button></noscript>
+                </div>
+            </form>
         </div>
 
         <!-- ── Kartu Laporan Hari Ini (Realtime) ── -->
         <div class="card card-print" style="margin-bottom: 20px;">
             <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px;">
-                <div class="card-title" style="margin-bottom: 0;">Summary Report</div>
+                <div class="card-title" style="margin-bottom: 0;">
+                    Summary Report
+                    <span th:if="${targetUser != null && targetUser.id != user.id}"
+                          th:text="' - ' + ${targetUser.namaUser}"
+                          style="color: var(--primary);"></span>
+                </div>
                 <button type="button" class="btn btn-primary print-btn" onclick="window.print()">
                     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
                     Print / Export PDF
@@ -93,7 +116,12 @@
         <!-- ── Tabel Riwayat Laporan Harian ── -->
         <div class="card card-print">
             <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px;">
-                <div class="card-title" style="margin-bottom: 0;">Riwayat Laporan Harian</div>
+                <div class="card-title" style="margin-bottom: 0;">
+                    Riwayat Laporan Harian
+                    <span th:if="${targetUser != null && targetUser.id != user.id}"
+                          th:text="' - ' + ${targetUser.namaUser}"
+                          style="color: var(--primary);"></span>
+                </div>
                 <span style="font-size: 12px; color: var(--text-3);"
                       th:text="${#lists.size(laporanList)} + ' laporan'">0 laporan</span>
             </div>

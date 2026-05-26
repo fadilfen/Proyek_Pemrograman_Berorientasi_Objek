@@ -33,6 +33,22 @@ public class User {
     // Token awal pengguna saat pertama kali daftar
     private int token = 50;
 
+    // Peran pengguna: ORANG_TUA atau ANAK
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private Role role = Role.ANAK;
+
+    // Batas harian aktivitas (dalam menit), default 120 menit
+    private int batasHarian = 120;
+
+    // Relasi parent-child (Orang Tua - Anak)
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "parent_id")
+    private User parent;
+
+    @OneToMany(mappedBy = "parent", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private List<User> anakList = new ArrayList<>();
+
     // Relasi one-to-many ke tabel aktivitas_digital
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<AktivitasDigital> aktivitasList = new ArrayList<>();
@@ -40,11 +56,20 @@ public class User {
     // Konstruktor kosong wajib untuk JPA
     public User() {}
 
-    // Konstruktor untuk membuat user baru
+    // Konstruktor untuk membuat user baru (default role)
     public User(String namaUser, String username, String password) {
         this.namaUser  = namaUser;
         this.username  = username;
         this.password  = password;
+        this.role      = Role.ANAK; // Default jika tidak diset
+    }
+
+    // Konstruktor untuk membuat user baru dengan role spesifik
+    public User(String namaUser, String username, String password, Role role) {
+        this.namaUser  = namaUser;
+        this.username  = username;
+        this.password  = password;
+        this.role      = role;
     }
 
     /**
@@ -81,6 +106,14 @@ public class User {
     public void setPassword(String password)                     { this.password = password; }
     public int getToken()                                        { return token; }
     public void setToken(int token)                              { this.token = token; }
+    public Role getRole()                                        { return role; }
+    public void setRole(Role role)                               { this.role = role; }
+    public int getBatasHarian()                                  { return batasHarian; }
+    public void setBatasHarian(int batasHarian)                  { this.batasHarian = batasHarian; }
+    public User getParent()                                      { return parent; }
+    public void setParent(User parent)                           { this.parent = parent; }
+    public List<User> getAnakList()                              { return anakList; }
+    public void setAnakList(List<User> anakList)                 { this.anakList = anakList; }
     public List<AktivitasDigital> getAktivitasList()             { return aktivitasList; }
     public void setAktivitasList(List<AktivitasDigital> list)    { this.aktivitasList = list; }
 }

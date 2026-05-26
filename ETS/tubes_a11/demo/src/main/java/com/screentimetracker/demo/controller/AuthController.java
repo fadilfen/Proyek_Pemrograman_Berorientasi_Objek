@@ -1,6 +1,7 @@
 package com.screentimetracker.demo.controller;
 
 import com.screentimetracker.demo.model.User;
+import com.screentimetracker.demo.model.Role;
 import com.screentimetracker.demo.service.MindFullService;
 import jakarta.servlet.http.HttpSession;
 import org.springframework.stereotype.Controller;
@@ -72,15 +73,20 @@ public class AuthController {
     public String doRegister(@RequestParam String namaLengkap,
                              @RequestParam String username,
                              @RequestParam String password,
+                             @RequestParam(required = false, defaultValue = "ANAK") Role role,
+                             @RequestParam(required = false) String parentUsername,
                              RedirectAttributes ra) {
-        if (service.register(username, password, namaLengkap)) {
+        
+        String errorMsg = service.register(username, password, namaLengkap, role, parentUsername);
+        
+        if (errorMsg == null) {
             // Register berhasil, arahkan ke login
             ra.addFlashAttribute("success", "Registrasi berhasil! Silakan login.");
             return "redirect:/login";
         }
 
-        // Register gagal karena username sudah ada
-        ra.addFlashAttribute("error", "Username sudah terdaftar!");
+        // Register gagal (bisa karena username ada, atau parent tidak valid)
+        ra.addFlashAttribute("error", errorMsg);
         return "redirect:/register";
     }
 
