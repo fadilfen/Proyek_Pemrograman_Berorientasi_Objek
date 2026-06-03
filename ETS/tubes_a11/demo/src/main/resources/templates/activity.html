@@ -73,7 +73,40 @@
         <!-- Header halaman -->
         <div class="page-header">
             <div class="page-judul">Activity Tracker</div>
-            <div class="page-sub">Catat dan pantau penggunaan aplikasi digital kamu</div>
+            <div class="page-sub">Catat dan pantau penggunaan aplikasi digital <span th:text="${targetUser != null && targetUser.id != user.id ? 'anak kamu' : 'kamu'}">kamu</span></div>
+        </div>
+
+        <!-- Pilihan Anak (Hanya untuk Orang Tua) -->
+        <div th:if="${user.role.name() == 'ORANG_TUA'}" class="card" style="margin-bottom: 24px;">
+            <div class="card-title" style="margin-bottom: 12px; font-size: 15px;">Pantau Tracker Anak</div>
+            
+            <div style="display: flex; gap: 16px; flex-wrap: wrap;">
+                <!-- Form ganti view anak -->
+                <form th:action="@{/activity}" method="get" style="flex: 1; min-width: 250px; display: flex; flex-direction: column; gap: 8px;">
+                    <label class="form-label" style="margin-bottom: 0;">Sedang melihat Tracker milik:</label>
+                    <div style="display: flex; gap: 8px;">
+                        <select name="anakId" class="form-control" style="flex: 1;" onchange="this.form.submit()">
+                            <option th:value="${user.id}" th:selected="${selectedAnakId == null || selectedAnakId == user.id}">Akun Saya Sendiri</option>
+                            <option th:each="anak : ${anakList}" 
+                                    th:value="${anak.id}" 
+                                    th:text="${anak.namaUser + ' (@' + anak.username + ')'}"
+                                    th:selected="${selectedAnakId == anak.id}"></option>
+                        </select>
+                        <noscript><button type="submit" class="btn btn-primary" style="padding: 0 16px;">Lihat</button></noscript>
+                    </div>
+                </form>
+
+                <!-- Form cepat tambah anak -->
+                <form th:action="@{/activity/tambah-anak}" method="post" style="flex: 2; min-width: 400px; display: flex; flex-direction: column; gap: 8px; padding-left: 16px; border-left: 1px solid var(--border);">
+                    <label class="form-label" style="margin-bottom: 0;">+ Tambah Akun Anak Baru:</label>
+                    <div style="display: flex; gap: 8px;">
+                        <input type="text" name="namaAnak" class="form-control" placeholder="Nama Lengkap" required/>
+                        <input type="text" name="usernameAnak" class="form-control" placeholder="Username" required/>
+                        <input type="password" name="passwordAnak" class="form-control" placeholder="Password" required/>
+                        <button type="submit" class="btn btn-primary" style="padding: 0 16px; white-space: nowrap;">Tambah</button>
+                    </div>
+                </form>
+            </div>
         </div>
 
         <!-- Pesan sukses atau error dari controller -->
@@ -95,18 +128,46 @@
 
                 <!-- Form dikirim ke MainController.addActivity() -->
                 <form th:action="@{/activity/add}" method="post">
+                    
+                    <input type="hidden" name="targetUserId" th:if="${selectedAnakId != null}" th:value="${selectedAnakId}"/>
 
-                    <!-- Pilihan aplikasi -->
+                    <!-- Pilihan aplikasi (custom dropdown dengan logo asli) -->
                     <div class="form-group">
                         <label class="form-label">Aplikasi</label>
-                        <select name="namaAplikasi" class="form-control">
-                            <option value="TikTok">🎵  TikTok</option>
-                            <option value="Instagram">📸  Instagram</option>
-                            <option value="YouTube">▶️  YouTube</option>
-                            <option value="WhatsApp">💬  WhatsApp</option>
-                            <option value="Netflix">🎬  Netflix</option>
-                            <option value="Spotify">🎧  Spotify</option>
-                        </select>
+                        <input type="hidden" name="namaAplikasi" id="selectedApp" value="TikTok"/>
+                        <div class="custom-select" id="appDropdown">
+                            <div class="custom-select-trigger" id="appTrigger">
+                                <img src="https://cdn.simpleicons.org/tiktok/ffffff" alt="TikTok" class="app-logo"/>
+                                <span>TikTok</span>
+                                <svg class="custom-select-arrow" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+                            </div>
+                            <div class="custom-select-options" id="appOptions">
+                                <div class="custom-select-option selected" data-value="TikTok">
+                                    <img src="https://cdn.simpleicons.org/tiktok/ffffff" alt="TikTok" class="app-logo"/>
+                                    <span>TikTok</span>
+                                </div>
+                                <div class="custom-select-option" data-value="Instagram">
+                                    <img src="https://cdn.simpleicons.org/instagram/E4405F" alt="Instagram" class="app-logo"/>
+                                    <span>Instagram</span>
+                                </div>
+                                <div class="custom-select-option" data-value="YouTube">
+                                    <img src="https://cdn.simpleicons.org/youtube/FF0000" alt="YouTube" class="app-logo"/>
+                                    <span>YouTube</span>
+                                </div>
+                                <div class="custom-select-option" data-value="WhatsApp">
+                                    <img src="https://cdn.simpleicons.org/whatsapp/25D366" alt="WhatsApp" class="app-logo"/>
+                                    <span>WhatsApp</span>
+                                </div>
+                                <div class="custom-select-option" data-value="Netflix">
+                                    <img src="https://cdn.simpleicons.org/netflix/E50914" alt="Netflix" class="app-logo"/>
+                                    <span>Netflix</span>
+                                </div>
+                                <div class="custom-select-option" data-value="Spotify">
+                                    <img src="https://cdn.simpleicons.org/spotify/1DB954" alt="Spotify" class="app-logo"/>
+                                    <span>Spotify</span>
+                                </div>
+                            </div>
+                        </div>
                     </div>
 
                     <!-- Input durasi penggunaan -->
@@ -161,7 +222,12 @@
             <div class="card">
                 <!-- Header tabel dengan jumlah aktivitas -->
                 <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px;">
-                    <div class="card-title" style="margin-bottom: 0;">Activity Log</div>
+                    <div class="card-title" style="margin-bottom: 0;">
+                        Activity Log 
+                        <span th:if="${targetUser != null && targetUser.id != user.id}" 
+                              th:text="' - ' + ${targetUser.namaUser}" 
+                              style="color: var(--primary);"></span>
+                    </div>
                     <span style="font-size: 12px; color: var(--text-3);"
                           th:text="${#lists.size(aktivitasList)} + ' aktivitas'">0 aktivitas</span>
                 </div>
@@ -180,16 +246,15 @@
                         <tbody>
                             <!-- Iterasi daftar aktivitas milik user yang sedang login -->
                             <tr th:each="a : ${aktivitasList}">
-                                <!-- Kolom nama aplikasi dengan ikon emoji -->
+                                <!-- Kolom nama aplikasi dengan logo asli -->
                                 <td>
                                     <div class="app-cell">
-                                        <div class="app-icon"
-                                             th:text="${a.namaAplikasi == 'TikTok'} ? '🎵' :
-                                                       (${a.namaAplikasi == 'Instagram'} ? '📸' :
-                                                       (${a.namaAplikasi == 'YouTube'} ? '▶️' :
-                                                       (${a.namaAplikasi == 'WhatsApp'} ? '💬' :
-                                                       (${a.namaAplikasi == 'Netflix'} ? '🎬' :
-                                                       (${a.namaAplikasi == 'Spotify'} ? '🎧' : '📱')))))">📱</div>
+                                        <img th:if="${a.namaAplikasi == 'TikTok'}" src="https://cdn.simpleicons.org/tiktok/ffffff" alt="TikTok" class="app-logo"/>
+                                        <img th:if="${a.namaAplikasi == 'Instagram'}" src="https://cdn.simpleicons.org/instagram/E4405F" alt="Instagram" class="app-logo"/>
+                                        <img th:if="${a.namaAplikasi == 'YouTube'}" src="https://cdn.simpleicons.org/youtube/FF0000" alt="YouTube" class="app-logo"/>
+                                        <img th:if="${a.namaAplikasi == 'WhatsApp'}" src="https://cdn.simpleicons.org/whatsapp/25D366" alt="WhatsApp" class="app-logo"/>
+                                        <img th:if="${a.namaAplikasi == 'Netflix'}" src="https://cdn.simpleicons.org/netflix/E50914" alt="Netflix" class="app-logo"/>
+                                        <img th:if="${a.namaAplikasi == 'Spotify'}" src="https://cdn.simpleicons.org/spotify/1DB954" alt="Spotify" class="app-logo"/>
                                         <span class="app-name" th:text="${a.namaAplikasi}">App</span>
                                     </div>
                                 </td>
@@ -224,6 +289,136 @@
 
         </div>
     </main>
+
+    <style>
+        /* ── Custom Dropdown dengan Logo Asli ── */
+        .custom-select {
+            position: relative;
+            width: 100%;
+        }
+        .custom-select-trigger {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 14px;
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: border-color 0.2s, box-shadow 0.2s;
+            color: var(--text-1);
+            font-size: 14px;
+        }
+        .custom-select-trigger:hover {
+            border-color: var(--primary);
+        }
+        .custom-select.open .custom-select-trigger {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px var(--primary-dim);
+        }
+        .custom-select-arrow {
+            margin-left: auto;
+            color: var(--text-3);
+            transition: transform 0.2s;
+        }
+        .custom-select.open .custom-select-arrow {
+            transform: rotate(180deg);
+        }
+        .custom-select-options {
+            display: none;
+            position: absolute;
+            top: calc(100% + 4px);
+            left: 0;
+            right: 0;
+            background: #1e2030;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            overflow: hidden;
+            z-index: 100;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+        }
+        .custom-select.open .custom-select-options {
+            display: block;
+            animation: dropdownFadeIn 0.15s ease;
+        }
+        @keyframes dropdownFadeIn {
+            from { opacity: 0; transform: translateY(-4px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+        .custom-select-option {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 14px;
+            cursor: pointer;
+            transition: background 0.15s;
+            font-size: 14px;
+            color: var(--text-1);
+        }
+        .custom-select-option:hover {
+            background: var(--primary-dim);
+        }
+        .custom-select-option.selected {
+            background: var(--primary-dim);
+            font-weight: 600;
+        }
+        .app-logo {
+            width: 20px;
+            height: 20px;
+            object-fit: contain;
+            flex-shrink: 0;
+        }
+    </style>
+
+    <script>
+        // ── Custom Dropdown Logic ──
+        (function() {
+            const dropdown = document.getElementById('appDropdown');
+            const trigger  = document.getElementById('appTrigger');
+            const options  = document.getElementById('appOptions');
+            const hidden   = document.getElementById('selectedApp');
+
+            if (!dropdown || !trigger || !options || !hidden) return;
+
+            // Toggle dropdown open/close
+            trigger.addEventListener('click', function(e) {
+                e.stopPropagation();
+                dropdown.classList.toggle('open');
+            });
+
+            // Handle option selection
+            options.querySelectorAll('.custom-select-option').forEach(function(opt) {
+                opt.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    const value = this.getAttribute('data-value');
+                    const img   = this.querySelector('img');
+                    const label = this.querySelector('span');
+
+                    // Update hidden input value
+                    hidden.value = value;
+
+                    // Update trigger display
+                    trigger.querySelector('img').src = img.src;
+                    trigger.querySelector('img').alt = img.alt;
+                    trigger.querySelector('span').textContent = label.textContent;
+
+                    // Update selected state
+                    options.querySelectorAll('.custom-select-option').forEach(function(o) {
+                        o.classList.remove('selected');
+                    });
+                    this.classList.add('selected');
+
+                    // Close dropdown
+                    dropdown.classList.remove('open');
+                });
+            });
+
+            // Close dropdown when clicking outside
+            document.addEventListener('click', function() {
+                dropdown.classList.remove('open');
+            });
+        })();
+    </script>
 
 </body>
 </html>

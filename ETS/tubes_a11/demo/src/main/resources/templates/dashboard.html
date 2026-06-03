@@ -265,6 +265,36 @@
 
         </div>
 
+        <!-- ── Panel Orang Tua (Hanya muncul jika Role = ORANG_TUA) ── -->
+        <div class="card" th:if="${user.role.name() == 'ORANG_TUA'}" style="margin-bottom: 16px;">
+            <div class="card-title">Pemantauan Anak</div>
+            <div th:if="${#lists.isEmpty(anakList)}" style="color: var(--text-3); font-size: 13px;">
+                Belum ada akun anak yang terhubung.
+            </div>
+            
+            <div th:if="${!#lists.isEmpty(anakList)}" style="display: flex; flex-direction: column; gap: 12px;">
+                <div th:each="anak : ${anakList}" 
+                     style="padding: 16px; border: 1px solid var(--border); border-radius: 10px; background: rgba(0,0,0,0.1); display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                        <div style="font-weight: 600; font-size: 14px; color: var(--text-1);" th:text="${anak.namaUser} + ' (@' + ${anak.username} + ')'">Nama Anak</div>
+                        <div style="font-size: 12px; color: var(--text-3); margin-top: 4px;">
+                            Batas Harian Saat Ini: <span th:text="${anak.batasHarian} + ' menit'" style="color: var(--warning); font-weight: 500;">120 menit</span>
+                        </div>
+                    </div>
+                    
+                    <form th:action="@{/parent/update-batas}" method="post" style="display: flex; gap: 8px; align-items: center;">
+                        <input type="hidden" name="anakId" th:value="${anak.id}"/>
+                        <input type="number" name="batasBaru" th:value="${anak.batasHarian}" min="1" max="1440" required
+                               style="width: 80px; padding: 8px; border-radius: 6px; border: 1px solid var(--border); background: var(--bg); color: var(--text-1);"/>
+                        <button type="submit" 
+                                style="padding: 8px 12px; border-radius: 6px; border: none; background: var(--primary); color: white; font-weight: 600; cursor: pointer; transition: background 0.2s;">
+                            Simpan
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
         <!-- ── Notifikasi Terbaru ── -->
         <div class="card" th:if="${!#lists.isEmpty(notifikasiList)}">
             <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px;">

@@ -297,7 +297,29 @@
             </div>
 
             <!-- Form register, dikirim ke AuthController.doRegister() -->
-            <form th:action="@{/register}" method="post">
+            <form th:action="@{/register}" method="post" id="registerForm">
+
+                <div class="form-group">
+                    <label class="form-label">Peran</label>
+                    <div class="input-wrap">
+                        <select name="role" id="roleSelect" class="form-control" required onchange="toggleParentField()">
+                            <option value="ANAK">Anak</option>
+                            <option value="ORANG_TUA">Orang Tua</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-group" id="parentUsernameGroup">
+                    <label class="form-label">Username Orang Tua</label>
+                    <div class="input-wrap">
+                        <svg class="input-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4"/><path d="M16 8v5a3 3 0 0 0 6 0v-1a10 10 0 1 0-3.92 7.94"/></svg>
+                        <input type="text"
+                               name="parentUsername"
+                               id="parentUsernameInput"
+                               class="form-control"
+                               placeholder="Username akun orang tua kamu"/>
+                    </div>
+                </div>
 
                 <div class="form-group">
                     <label class="form-label">Nama Lengkap</label>
@@ -349,4 +371,21 @@
     </div>
 
 </body>
+<script>
+    function toggleParentField() {
+        var role = document.getElementById("roleSelect").value;
+        var parentGroup = document.getElementById("parentUsernameGroup");
+        var parentInput = document.getElementById("parentUsernameInput");
+        
+        if (role === 'ANAK') {
+            parentGroup.style.display = 'block';
+            parentInput.required = true;
+        } else {
+            parentGroup.style.display = 'none';
+            parentInput.required = false;
+        }
+    }
+    // Initialize state on load
+    toggleParentField();
+</script>
 </html>

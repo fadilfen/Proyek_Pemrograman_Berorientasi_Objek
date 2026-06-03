@@ -5,6 +5,7 @@ import com.screentimetracker.demo.model.LaporanHarian;
 import com.screentimetracker.demo.model.Notifikasi;
 import com.screentimetracker.demo.model.TopUp;
 import com.screentimetracker.demo.model.User;
+import com.screentimetracker.demo.model.Role;
 import com.screentimetracker.demo.repository.AktivitasDigitalRepository;
 import com.screentimetracker.demo.repository.LaporanHarianRepository;
 import com.screentimetracker.demo.repository.NotifikasiRepository;
@@ -61,12 +62,29 @@ public class MindFullService {
     /**
      * Mendaftarkan pengguna baru ke database.
      * Menggantikan fungsi register() di UserManager.java proyek GUI.
-     * Mengembalikan false jika username sudah digunakan.
+     * Mengembalikan pesan error jika gagal, atau null jika berhasil.
      */
-    public boolean register(String username, String password, String namaLengkap) {
-        if (userRepo.existsByUsername(username)) return false;
-        userRepo.save(new User(namaLengkap, username, password));
-        return true;
+    public String register(String username, String password, String namaLengkap, Role role, String parentUsername) {
+        if (userRepo.existsByUsername(username)) return "Username sudah terdaftar!";
+
+        User user = new User(namaLengkap, username, password, role);
+
+        if (role == Role.ANAK) {
+            if (parentUsername == null || parentUsername.trim().isEmpty()) {
+                return "Username orang tua wajib diisi untuk mendaftar sebagai anak!";
+            }
+            User parent = userRepo.findByUsername(parentUsername).orElse(null);
+            if (parent == null) {
+                return "Username orang tua tidak ditemukan!";
+            }
+            if (parent.getRole() != Role.ORANG_TUA) {
+                return "Akun tersebut bukan akun Orang Tua!";
+            }
+            user.setParent(parent);
+        }
+
+        userRepo.save(user);
+        return null;
     }
 
     /**
@@ -124,13 +142,52 @@ public class MindFullService {
         List<AktivitasDigital> semuaAktivitas = aktivitasRepo.findByUserId(userId);
         int totalMenit = semuaAktivitas.stream().mapToInt(AktivitasDigital::getDurasiMenit).sum();
 
-        // Kirim notifikasi jika screen time >= 120 menit
-        if (totalMenit >= 120) {
+        // Kirim notifikasi jika screen time >= batas harian (default 120, atau sesuai setelan orang tua)
+        if (totalMenit >= user.getBatasHarian()) {
             String pesan = Notifikasi.kirimPeringatan(totalMenit);
             notifikasiRepo.save(new Notifikasi(pesan, user));
+            
+            // Juga kirim ke orang tua jika ada
+            if (user.getParent() != null) {
+                String pesanParent = "⚠️ Anak Anda (" + user.getNamaUser() + ") telah melewati batas harian screen time! (" + totalMenit + " menit)";
+                notifikasiRepo.save(new Notifikasi(pesanParent, user.getParent()));
+            }
         }
 
         return true;
+    }
+
+    /**
+     * Mengubah batas harian anak (Hanya bisa dipanggil oleh orang tua dari anak tersebut)
+     */
+    public boolean updateBatasHarianAnak(Long parentId, Long anakId, int batasBaru) {
+        User parent = userRepo.findById(parentId).orElse(null);
+        User anak = userRepo.findById(anakId).orElse(null);
+
+        if (parent == null || anak == null || anak.getParent() == null) return false;
+        if (!anak.getParent().getId().equals(parent.getId())) return false;
+
+        anak.setBatasHarian(batasBaru);
+        userRepo.save(anak);
+
+        // Beri tahu anak bahwa batas hariannya diubah
+        String pesan = "ℹ️ Batas harian Anda telah diubah oleh orang tua menjadi " + batasBaru + " menit.";
+        notifikasiRepo.save(new Notifikasi(pesan, anak));
+
+        return true;
+    }
+
+    /**
+     * Mengambil daftar anak dari seorang orang tua.
+     */
+    public List<User> getAnakByParent(Long parentId) {
+        User parent = userRepo.findById(parentId).orElse(null);
+        if (parent == null) return List.of();
+        
+        // Panggil getter anakList dan inisialisasi agar terhindar dari LazyInitializationException
+        List<User> list = parent.getAnakList();
+        list.size();
+        return list;
     }
 
     /**
