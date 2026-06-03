@@ -3,17 +3,23 @@
     "configurations": [
         {
             "type": "java",
-            "name": "Run MindFull GUI",
+            "name": "Main",
+            "request": "launch",
+            "mainClass": "Main",
+            "projectName": "oop_a11"
+        },
+        {
+            "type": "java",
+            "name": "Run MindFull App",
             "request": "launch",
             "mainClass": "tubes_a11.Main",
+            "projectName": "oop_a11",
+            "cwd": "${workspaceFolder}/gui",
             "classPaths": [
                 "${workspaceFolder}/gui/bin",
                 "${workspaceFolder}/gui/lib/mysql-connector.jar"
             ],
-            "sourcePaths": [
-                "${workspaceFolder}/gui/src"
-            ],
-            "cwd": "${workspaceFolder}"
+            "console": "integratedTerminal"
         }
     ]
 }

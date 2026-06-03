@@ -20,7 +20,14 @@ public class DatabaseHelper {
     // ── Konfigurasi koneksi MySQL ─────────────────────────────────────────
     private static final String JDBC_URL  =
             "jdbc:mysql://localhost:3306/mindfull_db" +
-            "?useSSL=false&serverTimezone=Asia/Jakarta&allowPublicKeyRetrieval=true";
+            "?useSSL=false" +
+            "&serverTimezone=Asia/Jakarta" +
+            "&allowPublicKeyRetrieval=true" +
+            "&autoReconnect=true" +
+            "&useUnicode=true" +
+            "&characterEncoding=UTF-8" +
+            "&connectTimeout=3000" +
+            "&socketTimeout=10000";
     private static final String DB_USER     = "root";
     private static final String DB_PASSWORD = ""; // kosong = default Laragon
 
@@ -35,19 +42,21 @@ public class DatabaseHelper {
      * @throws SQLException jika koneksi gagal (Laragon belum aktif, dll)
      */
     public static Connection getConnection() throws SQLException {
-        if (connection == null || connection.isClosed()) {
-            try {
+        try {
+            if (connection == null || connection.isClosed()) {
                 // Muat driver MySQL secara eksplisit
                 Class.forName("com.mysql.cj.jdbc.Driver");
                 connection = DriverManager.getConnection(JDBC_URL, DB_USER, DB_PASSWORD);
-                System.out.println("[DB] Koneksi ke MySQL berhasil: " + JDBC_URL);
-            } catch (ClassNotFoundException e) {
-                throw new SQLException(
-                    "Driver MySQL tidak ditemukan. " +
-                    "Pastikan mysql-connector-j.jar ada di classpath.", e);
+                // Set connection properties untuk performa
+                connection.setAutoCommit(true);
+                System.out.println("[DB] Koneksi ke MySQL berhasil");
             }
+            return connection;
+        } catch (ClassNotFoundException e) {
+            throw new SQLException(
+                "Driver MySQL tidak ditemukan. " +
+                "Pastikan mysql-connector-j.jar ada di classpath.", e);
         }
-        return connection;
     }
 
     /**
@@ -76,6 +85,58 @@ public class DatabaseHelper {
         ps.setString(2, password);
         return ps.executeQuery();
     }
+    
+    /**
+     * Menambahkan app timer untuk child
+     */
+    public static void tambahAppTimer(long childId, String appName, int durationMinutes, 
+                                      java.time.LocalTime startTime, java.time.LocalTime endTime) 
+            throws SQLException {
+        String sql = "INSERT INTO app_timers (child_id, app_name, duration_minutes, start_time, end_time, is_tracking) "
+                   + "VALUES (?, ?, ?, ?, ?, 0)";
+        try (PreparedStatement ps = getConnection().prepareStatement(sql)) {
+            ps.setLong(1, childId);
+            ps.setString(2, appName);
+            ps.setInt(3, durationMinutes);
+            ps.setTime(4, java.sql.Time.valueOf(startTime));
+            ps.setTime(5, java.sql.Time.valueOf(endTime));
+            ps.executeUpdate();
+        }
+    }
+    
+    /**
+     * Update status tracking app timer
+     */
+    public static void updateAppTimerTracking(long timerId, boolean isTracking) throws SQLException {
+        String sql = "UPDATE app_timers SET is_tracking = ? WHERE id = ?";
+        try (PreparedStatement ps = getConnection().prepareStatement(sql)) {
+            ps.setBoolean(1, isTracking);
+            ps.setLong(2, timerId);
+            ps.executeUpdate();
+        }
+    }
+    
+    /**
+     * Update semua app timers untuk child menjadi tracking
+     */
+    public static void startTrackingForChild(long childId) throws SQLException {
+        String sql = "UPDATE app_timers SET is_tracking = 1 WHERE child_id = ?";
+        try (PreparedStatement ps = getConnection().prepareStatement(sql)) {
+            ps.setLong(1, childId);
+            ps.executeUpdate();
+        }
+    }
+    
+    /**
+     * Hapus app timer
+     */
+    public static void hapusAppTimer(long timerId) throws SQLException {
+        String sql = "DELETE FROM app_timers WHERE id = ?";
+        try (PreparedStatement ps = getConnection().prepareStatement(sql)) {
+            ps.setLong(1, timerId);
+            ps.executeUpdate();
+        }
+    }
 
     /**
      * Memeriksa apakah username sudah terdaftar.
@@ -90,18 +151,36 @@ public class DatabaseHelper {
     }
 
     /**
-     * Mendaftarkan user baru ke database dengan token awal 50.
+     * Mendaftarkan user baru ke database dengan role parent (default)
      *
      * @return true jika berhasil, false jika username sudah ada
      */
     public static boolean daftarUser(String namaUser, String username, String password)
             throws SQLException {
         if (usernameAda(username)) return false;
-        String sql = "INSERT INTO users (nama_user, username, password, token) VALUES (?,?,?,50)";
+        String sql = "INSERT INTO users (nama_user, username, password, token, role, parent_id) VALUES (?,?,?,50,'parent',NULL)";
         try (PreparedStatement ps = getConnection().prepareStatement(sql)) {
             ps.setString(1, namaUser);
             ps.setString(2, username);
             ps.setString(3, password);
+            ps.executeUpdate();
+            return true;
+        }
+    }
+    
+    /**
+     * Mendaftarkan child account oleh parent
+     * @param parentId id parent yang membuat child
+     */
+    public static boolean daftarChildUser(long parentId, String namaUser, String username, String password)
+            throws SQLException {
+        if (usernameAda(username)) return false;
+        String sql = "INSERT INTO users (nama_user, username, password, token, role, parent_id) VALUES (?,?,?,0,'child',?)";
+        try (PreparedStatement ps = getConnection().prepareStatement(sql)) {
+            ps.setString(1, namaUser);
+            ps.setString(2, username);
+            ps.setString(3, password);
+            ps.setLong(4, parentId);
             ps.executeUpdate();
             return true;
         }

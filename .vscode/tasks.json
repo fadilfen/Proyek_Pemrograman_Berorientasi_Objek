@@ -1,0 +1,32 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Compile MindFull",
+            "type": "shell",
+            "command": "javac",
+            "args": [
+                "-encoding",
+                "UTF-8",
+                "-cp",
+                ".;../lib/mysql-connector.jar",
+                "-d",
+                "../bin",
+                "tubes_a11/*.java",
+                "database/*.java"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}/gui/src"
+            },
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared"
+            },
+            "problemMatcher": ["$javac"]
+        }
+    ]
+}

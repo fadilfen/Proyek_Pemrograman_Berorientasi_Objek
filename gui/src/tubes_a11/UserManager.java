@@ -16,14 +16,20 @@ public class UserManager {
      *
      * @param username username yang diinput
      * @param password password yang diinput
-     * @return array [namaUser, idUser] jika berhasil, null jika gagal
+     * @return array [namaUser, idUser, token, role, parentId] jika berhasil, null jika gagal
      */
     public static Object[] login(String username, String password) {
         try {
             ResultSet rs = DatabaseHelper.cariUserLogin(username, password);
             if (rs.next()) {
-                // Kembalikan nama dan id user untuk digunakan di aplikasi
-                return new Object[]{ rs.getString("nama_user"), rs.getLong("id"), rs.getInt("token") };
+                Long parentId = rs.getObject("parent_id", Long.class);
+                return new Object[]{ 
+                    rs.getString("nama_user"), 
+                    rs.getLong("id"), 
+                    rs.getInt("token"),
+                    rs.getString("role"),
+                    parentId
+                };
             }
         } catch (SQLException e) {
             System.err.println("[UserManager] Error login: " + e.getMessage());
@@ -32,7 +38,7 @@ public class UserManager {
     }
 
     /**
-     * Mendaftarkan user baru ke database.
+     * Mendaftarkan user baru ke database (sebagai parent).
      *
      * @param username   username yang diinginkan
      * @param password   password
@@ -44,6 +50,18 @@ public class UserManager {
             return DatabaseHelper.daftarUser(namaLengkap, username, password);
         } catch (SQLException e) {
             System.err.println("[UserManager] Error register: " + e.getMessage());
+            return false;
+        }
+    }
+    
+    /**
+     * Mendaftarkan child account oleh parent
+     */
+    public static boolean registerChild(long parentId, String username, String password, String namaLengkap) {
+        try {
+            return DatabaseHelper.daftarChildUser(parentId, namaLengkap, username, password);
+        } catch (SQLException e) {
+            System.err.println("[UserManager] Error register child: " + e.getMessage());
             return false;
         }
     }
