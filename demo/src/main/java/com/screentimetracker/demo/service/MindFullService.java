@@ -1,13 +1,7 @@
 package com.screentimetracker.demo.service;
 
-import com.midtrans.httpclient.error.MidtransError;
-import com.screentimetracker.demo.model.User;
-import com.screentimetracker.demo.model.AktivitasDigital;
-import com.screentimetracker.demo.model.TopUp;
-import com.screentimetracker.demo.repository.UserRepository;
-import com.screentimetracker.demo.repository.AktivitasDigitalRepository;
-import com.screentimetracker.demo.repository.TopUpRepository;
-import com.screentimetracker.demo.service.PaymentService;
+import com.screentimetracker.demo.model.*;
+import com.screentimetracker.demo.repository.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -16,57 +10,98 @@ import java.util.List;
 import java.util.Optional;
 
 /**
- * MindFullService adalah lapisan service yang menangani semua logika bisnis aplikasi.
- * Menggabungkan fungsi-fungsi dari UserManager, User, AktivitasDigital,
- * TopUp, dan LaporanHarian yang ada di proyek GUI ke dalam satu service terpusat.
+ * MindFullService adalah lapisan service utama aplikasi MindFull.
+ * Menangani logika bisnis inti: autentikasi, aktivitas digital,
+ * top up token, laporan harian, dan registrasi admin.
+ *
+ * Versi 2.0: ditambahkan fitur filter tanggal, registrasi admin,
+ * dan integrasi dengan NotificationService.
  */
 @Service
 @Transactional
 public class MindFullService {
 
-    private final UserRepository            userRepo;
-    private final AktivitasDigitalRepository aktivitasRepo;
-    private final TopUpRepository           topUpRepo;
-    private final PaymentService            paymentService;
+    private final UserRepository              userRepo;
+    private final AktivitasDigitalRepository  aktivitasRepo;
+    private final PaymentRepository           paymentRepo;
+    private final AdminTokenRepository        adminTokenRepo;
+    private final NotificationService         notifService;
 
     // Injeksi dependency melalui konstruktor (best practice Spring)
     public MindFullService(UserRepository userRepo,
                            AktivitasDigitalRepository aktivitasRepo,
-                           TopUpRepository topUpRepo,
-                           PaymentService paymentService) {
-        this.userRepo      = userRepo;
-        this.aktivitasRepo = aktivitasRepo;
-        this.topUpRepo     = topUpRepo;
-        this.paymentService = paymentService;
+                           PaymentRepository paymentRepo,
+                           AdminTokenRepository adminTokenRepo,
+                           NotificationService notifService) {
+        this.userRepo       = userRepo;
+        this.aktivitasRepo  = aktivitasRepo;
+        this.paymentRepo    = paymentRepo;
+        this.adminTokenRepo = adminTokenRepo;
+        this.notifService   = notifService;
     }
 
     // ── AUTENTIKASI ───────────────────────────────────────────────────────
 
     /**
      * Memvalidasi username dan password saat login.
-     * Menggantikan fungsi login() di UserManager.java proyek GUI.
+     * Hanya user yang aktif (isActive = true) yang bisa login.
      * Mengembalikan objek User jika berhasil, null jika gagal.
      */
     public User login(String username, String password) {
         return userRepo.findByUsername(username)
-                .filter(u -> u.getPassword().equals(password))
+                .filter(u -> u.getPassword().equals(password) && u.isActive())
                 .orElse(null);
     }
 
     /**
-     * Mendaftarkan pengguna baru ke database.
-     * Menggantikan fungsi register() di UserManager.java proyek GUI.
+     * Mendaftarkan pengguna baru dengan role USER.
+     * Role USER ditetapkan otomatis — tidak perlu dipilih pengguna.
      * Mengembalikan false jika username sudah digunakan.
      */
     public boolean register(String username, String password, String namaLengkap) {
         if (userRepo.existsByUsername(username)) return false;
-        userRepo.save(new User(namaLengkap, username, password));
+        User user = new User(namaLengkap, username, password);
+        user.setRole("USER");
+        userRepo.save(user);
+
+        // Buat notifikasi selamat datang
+        notifService.buatNotifikasi(
+            user,
+            "Selamat Datang di MindFull! 🎉",
+            "Halo " + namaLengkap + "! Mulai catat aktivitas digitalmu hari ini.",
+            "SUCCESS",
+            "/activity"
+        );
+        return true;
+    }
+
+    /**
+     * Mendaftarkan akun admin baru dengan validasi token rahasia.
+     * Token harus ada di tabel admin_tokens dan masih aktif.
+     *
+     * @param username    Username admin baru
+     * @param password    Password admin baru
+     * @param namaLengkap Nama lengkap admin
+     * @param adminToken  Token rahasia admin
+     * @return true jika berhasil, false jika token salah atau username sudah ada
+     */
+    public boolean registerAdmin(String username, String password,
+                                 String namaLengkap, String adminToken) {
+        // Validasi token admin
+        if (!adminTokenRepo.existsByTokenAndIsActiveTrue(adminToken)) {
+            return false;
+        }
+        // Cek duplikat username
+        if (userRepo.existsByUsername(username)) return false;
+
+        // Buat akun dengan role ADMIN
+        User admin = new User(namaLengkap, username, password, "ADMIN");
+        userRepo.save(admin);
         return true;
     }
 
     /**
      * Memperbarui username dan password pengguna.
-     * Menggantikan fungsi updateCredentials() di UserManager.java proyek GUI.
      * Mengembalikan false jika username baru sudah dipakai user lain.
      */
     public boolean updateCredentials(Long userId, String newUsername, String newPassword) {
@@ -97,122 +132,165 @@ public class MindFullService {
 
     /**
      * Menambahkan aktivitas digital baru dan memotong 5 token dari user.
-     * Menggantikan fungsi tambahAktivitas() di User.java proyek GUI.
+     * Jika durasi melebihi batas, kirim notifikasi peringatan.
      * Mengembalikan false jika token tidak cukup (minimal 5 token).
      */
     public boolean tambahAktivitas(Long userId, String namaAplikasi,
-                                   int durasi, int batas, LocalDate tanggal) {
+                                   int durasi, java.time.LocalTime jamMulai, LocalDate tanggal) {
         User user = userRepo.findById(userId).orElse(null);
 
         // Validasi: user harus ada dan memiliki minimal 5 token
         if (user == null || user.getToken() < 5) return false;
 
-        AktivitasDigital aktivitas = new AktivitasDigital(namaAplikasi, durasi, batas, tanggal, user);
+        // Set batas durasi sama dengan durasi menit untuk menjaga kompatibilitas DB
+        AktivitasDigital aktivitas = new AktivitasDigital(namaAplikasi, durasi, durasi, jamMulai, tanggal, user);
         aktivitasRepo.save(aktivitas);
 
         // Kurangi 5 token setelah berhasil log aktivitas
         user.setToken(user.getToken() - 5);
         userRepo.save(user);
+
+        // Kirim notifikasi token hampir habis
+        if (user.getToken() <= 10 && user.getToken() > 0) {
+            notifService.buatNotifikasi(
+                user,
+                "🪙 Token Hampir Habis",
+                "Saldo token kamu tersisa " + user.getToken() + " token. Segera top up agar bisa terus mencatat aktivitas.",
+                "WARNING",
+                "/topup"
+            );
+        }
+
         return true;
     }
 
     /**
-     * Mengambil semua aktivitas digital milik user tertentu.
+     * Mengambil semua aktivitas user, diurutkan terbaru dulu.
      */
     public List<AktivitasDigital> getAktivitasByUser(Long userId) {
-        return aktivitasRepo.findByUserId(userId);
+        return aktivitasRepo.findByUserIdOrderByTanggalDesc(userId);
+    }
+
+    /**
+     * Mengambil aktivitas user berdasarkan tanggal tertentu (filter harian).
+     * @param userId  ID pengguna
+     * @param tanggal Tanggal yang dicari
+     */
+    public List<AktivitasDigital> getAktivitasByUserAndTanggal(Long userId, LocalDate tanggal) {
+        return aktivitasRepo.findByUserIdAndTanggalOrderByTanggalDesc(userId, tanggal);
+    }
+
+    /**
+     * Mengambil aktivitas user dalam rentang tanggal (filter periode).
+     * @param userId    ID pengguna
+     * @param startDate Tanggal awal rentang
+     * @param endDate   Tanggal akhir rentang
+     */
+    public List<AktivitasDigital> getAktivitasByUserAndDateRange(
+            Long userId, LocalDate startDate, LocalDate endDate) {
+        return aktivitasRepo.findByUserIdAndTanggalBetween(userId, startDate, endDate);
     }
 
     // ── TOP UP TOKEN ──────────────────────────────────────────────────────
 
     /**
-     * Hasil proses top up.
+     * Kelas internal untuk hasil proses top up.
      */
     public static class TopUpResult {
-        private boolean success;
-        private String message;
-        private String snapToken; // untuk QRIS
+        private final boolean success;
+        private final String  message;
+        private final String  snapToken;
 
         public TopUpResult(boolean success, String message) {
-            this.success = success;
-            this.message = message;
+            this.success   = success;
+            this.message   = message;
+            this.snapToken = null;
         }
 
         public TopUpResult(boolean success, String message, String snapToken) {
-            this.success = success;
-            this.message = message;
+            this.success   = success;
+            this.message   = message;
             this.snapToken = snapToken;
         }
 
-        // Getters
-        public boolean isSuccess() { return success; }
-        public String getMessage() { return message; }
-        public String getSnapToken() { return snapToken; }
+        public boolean isSuccess()    { return success; }
+        public String getMessage()    { return message; }
+        public String getSnapToken()  { return snapToken; }
     }
 
     /**
      * Memproses transaksi top up token untuk user.
-     * Jika metode QRIS, tampilkan QRIS warung statis dan simpan transaksi sebagai belum dibayar.
-     * Jika metode lain, langsung proses top up.
-     * Menggantikan fungsi prosesTopUp() di TopUp.java proyek GUI.
+     * Semua transaksi dimulai dengan status PENDING (menunggu verifikasi admin).
+     * Untuk QRIS, tampilkan QR code warung statis.
      */
     public TopUpResult prosesTopUp(Long userId, int jumlah, String metode) {
         User user = userRepo.findById(userId).orElse(null);
 
-        // Validasi: user harus ada dan jumlah harus lebih dari 0
+        // Validasi input
         if (user == null || jumlah <= 0) {
             return new TopUpResult(false, "User tidak ditemukan atau jumlah tidak valid.");
         }
 
+        // Hitung total harga (1 token = Rp 1.000)
+        long totalHarga = (long) jumlah * 1000;
+
+        // Simpan transaksi dengan status PENDING
+        Payment payment = new Payment(jumlah, metode, totalHarga, user);
+        payment.setStatus("PENDING");
+        paymentRepo.save(payment);
+
+        // Kirim notifikasi pembayaran terkirim
+        notifService.buatNotifikasi(
+            user,
+            "💳 Top Up Terkirim",
+            "Permintaan top up " + jumlah + " token (Rp " + String.format("%,d", totalHarga) +
+            ") via " + metode + " sedang menunggu verifikasi admin.",
+            "INFO",
+            "/topup"
+        );
+
         if ("QRIS (Instant)".equals(metode)) {
-            // Untuk QRIS sederhana, tampilkan QR code warung statis dan simpan transaksi sebagai belum dibayar
-            TopUp topUp = new TopUp(jumlah, metode, user);
-            topUpRepo.save(topUp);
-
-            return new TopUpResult(true, "QRIS siap. Silakan scan QR code warung.", "qris-warung.png");
-        } else {
-            // Untuk metode lain, langsung proses
-            TopUp topUp = new TopUp(jumlah, metode, user);
-            topUpRepo.save(topUp);
-
-            user.setToken(user.getToken() + jumlah);
-            userRepo.save(user);
-            return new TopUpResult(true, "Top up berhasil! Token telah ditambahkan.");
+            return new TopUpResult(true, "QRIS siap. Silakan scan QR code.", "qris-warung.png");
         }
+
+        return new TopUpResult(true, "Permintaan top up berhasil dikirim! Menunggu verifikasi admin.");
     }
 
     /**
-     * Konfirmasi top up QRIS manual: kredit token untuk top up QRIS terakhir yang belum dibayar.
+     * Konfirmasi QRIS manual untuk user (sementara token langsung dikreditkan).
+     * Metode ini dipertahankan untuk backward compatibility.
      */
     public boolean confirmQrisTopUp(Long userId) {
         User user = userRepo.findById(userId).orElse(null);
         if (user == null) return false;
 
-        Optional<TopUp> latestOpt = topUpRepo.findTopByUserOrderByWaktuTopUpDesc(user);
+        Optional<Payment> latestOpt = paymentRepo.findTopByUserIdOrderByCreatedAtDesc(userId);
         if (latestOpt.isEmpty()) return false;
 
-        TopUp latest = latestOpt.get();
-        if (!"QRIS (Instant)".equals(latest.getMetodePembayaran()) || latest.isPaid()) {
+        Payment latest = latestOpt.get();
+        if (!"QRIS (Instant)".equals(latest.getMetode()) || !"PENDING".equals(latest.getStatus())) {
             return false;
         }
 
-        user.setToken(user.getToken() + latest.getJumlahKoin());
-        latest.setPaid(true);
-        userRepo.save(user);
-        topUpRepo.save(latest);
+        // Status dipertahankan PENDING untuk ditinjau admin
+        latest.setStatus("PENDING");
+        paymentRepo.save(latest);
+
+        notifService.buatNotifikasi(
+            user,
+            "⏳ Pembayaran QRIS Sedang Ditinjau",
+            "Konfirmasi pembayaran Anda untuk " + latest.getJumlahToken() + " token sedang ditinjau oleh admin.",
+            "INFO",
+            "/topup"
+        );
         return true;
     }
 
-    // ── LAPORAN HARIAN ────────────────────────────────────────────────────
-
     /**
-     * Handle pembayaran berhasil dari Midtrans.
-     * Update token user berdasarkan order_id.
+     * Handle pembayaran berhasil dari Midtrans (webhook).
      */
     public boolean handlePaymentSuccess(String orderId) {
-        // Parse orderId: "TOPUP-{userId}-{random}"
         if (!orderId.startsWith("TOPUP-")) return false;
-
         String[] parts = orderId.split("-");
         if (parts.length < 3) return false;
 
@@ -221,38 +299,46 @@ public class MindFullService {
             User user = userRepo.findById(userId).orElse(null);
             if (user == null) return false;
 
-            // Cari topup terbaru untuk user ini dengan metode QRIS yang belum paid
-            TopUp latestTopUp = topUpRepo.findTopByUserOrderByWaktuTopUpDesc(user)
-                    .filter(t -> "QRIS (Instant)".equals(t.getMetodePembayaran()) && !t.isPaid())
-                    .orElse(null);
+            Optional<Payment> latestOpt = paymentRepo.findTopByUserIdOrderByCreatedAtDesc(userId);
+            if (latestOpt.isEmpty()) return false;
 
-            if (latestTopUp != null) {
-                user.setToken(user.getToken() + latestTopUp.getJumlahKoin());
-                userRepo.save(user);
-                latestTopUp.setPaid(true);
-                topUpRepo.save(latestTopUp);
-                return true;
-            }
+            Payment latest = latestOpt.get();
+            if (latest.isVerified()) return false;
+
+            user.setToken(user.getToken() + latest.getJumlahToken());
+            latest.setStatus("VERIFIED");
+            latest.setVerifiedAt(java.time.LocalDateTime.now());
+            userRepo.save(user);
+            paymentRepo.save(latest);
+            return true;
         } catch (Exception e) {
             return false;
         }
-        return false;
     }
 
+    // ── LAPORAN HARIAN ────────────────────────────────────────────────────
+
     /**
-     * Menghasilkan laporan harian dalam bentuk teks.
-     * Menggantikan fungsi generateLaporan() di LaporanHarian.java proyek GUI.
+     * Menghasilkan data laporan kesehatan untuk user.
+     * Mengembalikan objek LaporanData yang digunakan untuk generate PDF.
+     * @param userId   ID pengguna
+     * @param tanggal  Tanggal laporan (null = ambil semua)
      */
-    public String generateLaporan(Long userId) {
+    public LaporanData generateLaporanData(Long userId, LocalDate tanggal) {
         User user = userRepo.findById(userId).orElse(null);
-        if (user == null) return "";
+        if (user == null) return null;
 
-        List<AktivitasDigital> list = aktivitasRepo.findByUserId(userId);
+        List<AktivitasDigital> list;
+        if (tanggal != null) {
+            list = aktivitasRepo.findByUserIdAndTanggalOrderByTanggalDesc(userId, tanggal);
+        } else {
+            list = aktivitasRepo.findByUserIdOrderByTanggalDesc(userId);
+        }
 
-        // Hitung total durasi screen time
+        // Hitung total durasi
         int totalDurasi = list.stream().mapToInt(AktivitasDigital::getDurasiMenit).sum();
 
-        // Hitung skor kesehatan (sama dengan logika di proyek GUI)
+        // Hitung skor kesehatan
         int score = 100;
         for (AktivitasDigital a : list) {
             score -= a.getDurasiMenit() / 10;
@@ -260,24 +346,111 @@ public class MindFullService {
         }
         score = Math.max(0, score);
 
-        // Susun teks laporan
-        StringBuilder sb = new StringBuilder();
-        sb.append("=== LAPORAN HARIAN ===\n");
-        sb.append("Nama User         : ").append(user.getNamaUser()).append("\n");
-        if (!list.isEmpty()) {
-            sb.append("Tanggal           : ").append(list.get(0).getTanggal()).append("\n");
-        }
-        sb.append("------------------------------\n");
-        sb.append("Detail Aplikasi:\n");
-        for (AktivitasDigital a : list) {
-            sb.append("- ").append(a.getNamaAplikasi())
-              .append(" : ").append(a.getDurasiMenit()).append(" menit\n");
-        }
-        sb.append("------------------------------\n");
-        sb.append("Total Screen Time : ").append(totalDurasi).append(" menit\n");
-        sb.append("Skor Harian       : ").append(score).append("\n");
-        sb.append("Status            : ").append(score >= 70 ? "Sehat" : "Kurangi Screen Time");
+        // Tentukan kategori
+        String kategori;
+        if (score >= 80)      kategori = "Sangat Sehat";
+        else if (score >= 60) kategori = "Sehat";
+        else if (score >= 40) kategori = "Perlu Perhatian";
+        else                  kategori = "Berbahaya";
 
+        // Susun ringkasan
+        String ringkasan = buildRingkasan(user, list, totalDurasi, score, kategori);
+
+        // Susun rekomendasi
+        String rekomendasi = buildRekomendasi(score, list);
+
+        return new LaporanData(user, list, totalDurasi, score, kategori,
+                               ringkasan, rekomendasi,
+                               tanggal != null ? tanggal : LocalDate.now());
+    }
+
+    /** Membangun teks ringkasan laporan. */
+    private String buildRingkasan(User user, List<AktivitasDigital> list,
+                                   int totalDurasi, int score, String kategori) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("Laporan Digital Wellness – ").append(user.getNamaUser()).append("\n");
+        sb.append("Total Screen Time: ").append(totalDurasi).append(" menit (")
+          .append(totalDurasi / 60).append(" jam ").append(totalDurasi % 60).append(" menit)\n");
+        sb.append("Skor Kesehatan: ").append(score).append("/100 — ").append(kategori).append("\n\n");
+        sb.append("Detail Penggunaan:\n");
+        for (AktivitasDigital a : list) {
+            sb.append("• ").append(a.getNamaAplikasi())
+              .append(" — ").append(a.getDurasiMenit()).append(" menit");
+            if (a.melebihiBatas()) sb.append(" ⚠️ Over Limit");
+            sb.append("\n");
+        }
         return sb.toString();
+    }
+
+    /** Membangun rekomendasi berdasarkan skor kesehatan. */
+    private String buildRekomendasi(int score, List<AktivitasDigital> list) {
+        if (score >= 80) {
+            return "Hebat! Penggunaan layar kamu sangat sehat. Pertahankan kebiasaan baik ini. " +
+                   "Terus pantau aktivitas digital kamu setiap hari untuk menjaga keseimbangan.";
+        } else if (score >= 60) {
+            return "Penggunaan layar kamu masih dalam batas wajar. Coba kurangi sedikit waktu " +
+                   "screen time dan tambah aktivitas fisik atau istirahat yang cukup.";
+        } else if (score >= 40) {
+            return "Perhatian! Screen time kamu cukup tinggi. Pertimbangkan untuk:\n" +
+                   "• Menetapkan batas waktu untuk setiap aplikasi\n" +
+                   "• Melakukan digital detox minimal 1 jam per hari\n" +
+                   "• Meningkatkan aktivitas non-digital";
+        } else {
+            return "PERINGATAN: Screen time kamu sangat tinggi dan berisiko bagi kesehatan mental. " +
+                   "Sangat disarankan untuk segera mengurangi penggunaan layar dan konsultasi " +
+                   "dengan profesional kesehatan jika diperlukan.";
+        }
+    }
+
+    /**
+     * Kelas data untuk hasil laporan (DTO).
+     */
+    public static class LaporanData {
+        public final User                    user;
+        public final List<AktivitasDigital>  aktivitasList;
+        public final int                     totalDurasi;
+        public final int                     skor;
+        public final String                  kategori;
+        public final String                  ringkasan;
+        public final String                  rekomendasi;
+        public final LocalDate               tanggal;
+
+        public LaporanData(User user, List<AktivitasDigital> aktivitasList,
+                           int totalDurasi, int skor, String kategori,
+                           String ringkasan, String rekomendasi, LocalDate tanggal) {
+            this.user          = user;
+            this.aktivitasList = aktivitasList;
+            this.totalDurasi   = totalDurasi;
+            this.skor          = skor;
+            this.kategori      = kategori;
+            this.ringkasan     = ringkasan;
+            this.rekomendasi   = rekomendasi;
+            this.tanggal       = tanggal;
+        }
+    }
+
+    /**
+     * Menghasilkan laporan dalam bentuk teks (untuk backward compatibility).
+     */
+    public String generateLaporan(Long userId) {
+        LaporanData data = generateLaporanData(userId, null);
+        if (data == null) return "";
+        return data.ringkasan + "\n\nRekomendasi:\n" + data.rekomendasi;
+    }
+
+    /**
+     * Mengirimkan notifikasi ke sistem saat aplikasi mencapai batas waktu screen time (over limit).
+     */
+    public void kirimNotifikasiOverLimit(Long userId, String appName) {
+        User user = userRepo.findById(userId).orElse(null);
+        if (user != null) {
+            notifService.buatNotifikasi(
+                user,
+                "⚠️ Batas Waktu Habis: " + appName,
+                "Halo " + user.getNamaUser() + ", batas waktu untuk aplikasi " + appName + " sudah habis.",
+                "DANGER",
+                "/my-apps"
+            );
+        }
     }
 }

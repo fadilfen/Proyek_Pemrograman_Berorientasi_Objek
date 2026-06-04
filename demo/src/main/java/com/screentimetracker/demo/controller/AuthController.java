@@ -26,7 +26,12 @@ public class AuthController {
     // Redirect ke dashboard jika sudah login, ke login jika belum
     @GetMapping("/")
     public String index(HttpSession session) {
-        if (session.getAttribute("userId") != null) return "redirect:/dashboard";
+        if (session.getAttribute("userId") != null) {
+            if ("ADMIN".equals(session.getAttribute("role"))) {
+                return "redirect:/admin/dashboard";
+            }
+            return "redirect:/dashboard";
+        }
         return "redirect:/login";
     }
 
@@ -34,7 +39,12 @@ public class AuthController {
     @GetMapping("/login")
     public String loginPage(HttpSession session) {
         // Jika sudah login, langsung ke dashboard
-        if (session.getAttribute("userId") != null) return "redirect:/dashboard";
+        if (session.getAttribute("userId") != null) {
+            if ("ADMIN".equals(session.getAttribute("role"))) {
+                return "redirect:/admin/dashboard";
+            }
+            return "redirect:/dashboard";
+        }
         return "login";
     }
 
@@ -51,6 +61,11 @@ public class AuthController {
             session.setAttribute("userId",   user.getId());
             session.setAttribute("namaUser", user.getNamaUser());
             session.setAttribute("username", user.getUsername());
+            session.setAttribute("role",     user.getRole());
+            
+            if ("ADMIN".equals(user.getRole())) {
+                return "redirect:/admin/dashboard";
+            }
             return "redirect:/dashboard";
         }
 
@@ -63,7 +78,12 @@ public class AuthController {
     @GetMapping("/register")
     public String registerPage(HttpSession session) {
         // Jika sudah login, langsung ke dashboard
-        if (session.getAttribute("userId") != null) return "redirect:/dashboard";
+        if (session.getAttribute("userId") != null) {
+            if ("ADMIN".equals(session.getAttribute("role"))) {
+                return "redirect:/admin/dashboard";
+            }
+            return "redirect:/dashboard";
+        }
         return "register";
     }
 
@@ -82,6 +102,33 @@ public class AuthController {
         // Register gagal karena username sudah ada
         ra.addFlashAttribute("error", "Username sudah terdaftar!");
         return "redirect:/register";
+    }
+
+    // Menampilkan halaman registrasi admin
+    @GetMapping("/admin-register")
+    public String adminRegisterPage(HttpSession session) {
+        if (session.getAttribute("userId") != null) {
+            if ("ADMIN".equals(session.getAttribute("role"))) {
+                return "redirect:/admin/dashboard";
+            }
+            return "redirect:/dashboard";
+        }
+        return "admin-register";
+    }
+
+    // Memproses registrasi admin
+    @PostMapping("/admin-register")
+    public String doAdminRegister(@RequestParam String namaLengkap,
+                                  @RequestParam String username,
+                                  @RequestParam String password,
+                                  @RequestParam String adminToken,
+                                  RedirectAttributes ra) {
+        if (service.registerAdmin(username, password, namaLengkap, adminToken)) {
+            ra.addFlashAttribute("success", "Registrasi Admin berhasil! Silakan login.");
+            return "redirect:/login";
+        }
+        ra.addFlashAttribute("error", "Registrasi Admin gagal! Pastikan token benar atau username belum terdaftar.");
+        return "redirect:/admin-register";
     }
 
     // Menghapus session dan mengarahkan ke halaman login

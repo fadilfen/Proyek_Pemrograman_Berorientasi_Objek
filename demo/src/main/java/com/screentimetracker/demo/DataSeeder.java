@@ -14,17 +14,24 @@ import org.springframework.stereotype.Component;
 public class DataSeeder implements CommandLineRunner {
 
     private final UserRepository userRepo;
+    private final com.screentimetracker.demo.repository.AdminTokenRepository adminTokenRepo;
 
-    public DataSeeder(UserRepository userRepo) {
+    public DataSeeder(UserRepository userRepo,
+                      com.screentimetracker.demo.repository.AdminTokenRepository adminTokenRepo) {
         this.userRepo = userRepo;
+        this.adminTokenRepo = adminTokenRepo;
     }
 
     @Override
     public void run(String... args) {
         // Buat akun admin default jika belum ada di database
-        // Sama seperti data hardcoded di UserManager.java pada proyek GUI
         if (!userRepo.existsByUsername("admin")) {
-            userRepo.save(new User("Admin Operator", "admin", "12345"));
+            userRepo.save(new User("Admin Operator", "admin", "12345", "ADMIN"));
+        }
+
+        // Buat token admin default untuk registrasi admin baru
+        if (adminTokenRepo.count() == 0) {
+            adminTokenRepo.save(new com.screentimetracker.demo.model.AdminToken("MINDFULL-ADMIN-2026"));
         }
     }
 }

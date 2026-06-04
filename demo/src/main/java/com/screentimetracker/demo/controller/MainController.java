@@ -3,8 +3,13 @@ package com.screentimetracker.demo.controller;
 import com.screentimetracker.demo.model.AktivitasDigital;
 import com.screentimetracker.demo.model.User;
 import com.screentimetracker.demo.service.MindFullService;
+import com.screentimetracker.demo.service.PdfService;
 import jakarta.servlet.http.HttpSession;
 import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -15,6 +20,7 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * MainController menangani semua halaman utama setelah user login:
@@ -25,9 +31,11 @@ import java.util.List;
 public class MainController {
 
     private final MindFullService service;
+    private final PdfService pdfService;
 
-    public MainController(MindFullService service) {
+    public MainController(MindFullService service, PdfService pdfService) {
         this.service = service;
+        this.pdfService = pdfService;
     }
 
     // Mengambil ID user dari session yang sedang aktif
@@ -82,11 +90,26 @@ public class MainController {
      * Setara dengan showActivityPage() di proyek GUI.
      */
     @GetMapping("/activity")
-    public String activityPage(HttpSession session, Model model) {
+    public String activityPage(HttpSession session,
+                                @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate tanggal,
+                                @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+                                @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
+                                Model model) {
         if (!isLoggedIn(session)) return "redirect:/login";
 
         Long userId = getUserId(session);
-        List<AktivitasDigital> list = service.getAktivitasByUser(userId);
+        List<AktivitasDigital> list;
+
+        if (startDate != null && endDate != null) {
+            list = service.getAktivitasByUserAndDateRange(userId, startDate, endDate);
+            model.addAttribute("startDate", startDate);
+            model.addAttribute("endDate", endDate);
+        } else if (tanggal != null) {
+            list = service.getAktivitasByUserAndTanggal(userId, tanggal);
+            model.addAttribute("tanggalFilter", tanggal);
+        } else {
+            list = service.getAktivitasByUser(userId);
+        }
 
         model.addAttribute("user",          service.getUser(userId));
         model.addAttribute("aktivitasList", list);
@@ -102,13 +125,24 @@ public class MainController {
     public String addActivity(HttpSession session,
                               @RequestParam String namaAplikasi,
                               @RequestParam int durasiMenit,
-                              @RequestParam int batasDurasi,
+                              @RequestParam String jamMulai,
                               @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate tanggal,
                               RedirectAttributes ra) {
         if (!isLoggedIn(session)) return "redirect:/login";
 
+        java.time.LocalTime parsedJamMulai = null;
+        try {
+            if (jamMulai != null && !jamMulai.isEmpty()) {
+                parsedJamMulai = java.time.LocalTime.parse(jamMulai);
+            } else {
+                parsedJamMulai = java.time.LocalTime.now();
+            }
+        } catch (Exception e) {
+            parsedJamMulai = java.time.LocalTime.now();
+        }
+
         boolean berhasil = service.tambahAktivitas(
-                getUserId(session), namaAplikasi, durasiMenit, batasDurasi, tanggal);
+                getUserId(session), namaAplikasi, durasiMenit, parsedJamMulai, tanggal);
 
         if (berhasil) {
             ra.addFlashAttribute("success", "Aktivitas berhasil ditambahkan!");
@@ -182,10 +216,13 @@ public class MainController {
      * Setara dengan showReportPage() di proyek GUI.
      */
     @GetMapping("/report")
-    public String reportPage(HttpSession session, Model model) {
+    public String reportPage(HttpSession session,
+                             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate tanggal,
+                             Model model) {
         if (!isLoggedIn(session)) return "redirect:/login";
 
         model.addAttribute("user", service.getUser(getUserId(session)));
+        model.addAttribute("tanggalFilter", tanggal);
         return "report";
     }
 
@@ -194,13 +231,41 @@ public class MainController {
      * Setara dengan tombol "Generate Summary Report" di proyek GUI.
      */
     @PostMapping("/report/generate")
-    public String generateReport(HttpSession session, Model model) {
+    public String generateReport(HttpSession session,
+                                 @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate tanggal,
+                                 Model model) {
         if (!isLoggedIn(session)) return "redirect:/login";
 
         Long userId = getUserId(session);
+        MindFullService.LaporanData laporanData = service.generateLaporanData(userId, tanggal);
+        
         model.addAttribute("user",    service.getUser(userId));
         model.addAttribute("laporan", service.generateLaporan(userId));
+        model.addAttribute("laporanData", laporanData);
+        model.addAttribute("tanggalFilter", tanggal);
         return "report";
+    }
+
+    /**
+     * Mengunduh laporan PDF.
+     */
+    @GetMapping("/report/download")
+    public ResponseEntity<byte[]> downloadReport(HttpSession session,
+                                                 @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate tanggal) {
+        if (!isLoggedIn(session)) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+
+        Long userId = getUserId(session);
+        MindFullService.LaporanData laporanData = service.generateLaporanData(userId, tanggal);
+        byte[] pdfBytes = pdfService.generatePdfReport(laporanData);
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_PDF);
+        String filename = "Laporan_Digital_Wellness_" + (tanggal != null ? tanggal.toString() : "Total") + ".pdf";
+        headers.setContentDispositionFormData("attachment", filename);
+
+        return new ResponseEntity<>(pdfBytes, headers, HttpStatus.OK);
     }
 
     // ── PROFILE ───────────────────────────────────────────────────────────
@@ -223,11 +288,11 @@ public class MainController {
 
         boolean success = service.confirmQrisTopUp(getUserId(session));
         if (success) {
-            ra.addFlashAttribute("success", "Pembayaran QRIS dikonfirmasi. Token telah ditambahkan.");
+            ra.addFlashAttribute("success", "Konfirmasi pembayaran QRIS terkirim! Status saat ini PENDING menunggu persetujuan admin.");
         } else {
-            ra.addFlashAttribute("error", "Konfirmasi pembayaran QRIS gagal. Pastikan Anda belum mengonfirmasi top up sebelumnya.");
+            ra.addFlashAttribute("error", "Konfirmasi pembayaran gagal. Pastikan transaksi Anda valid.");
         }
-        return "redirect:/dashboard";
+        return "redirect:/topup";
     }
 
     /**
@@ -284,5 +349,91 @@ public class MainController {
             ra.addFlashAttribute("error", "Username sudah digunakan oleh akun lain!");
         }
         return "redirect:/profile";
+    }
+
+    // ── SIMULASI MY APPS (DUMMY SMARTPHONE) ───────────────────────────────
+
+    @GetMapping("/my-apps")
+    public String myAppsPage(HttpSession session, Model model) {
+        if (!isLoggedIn(session)) return "redirect:/login";
+
+        model.addAttribute("user", service.getUser(getUserId(session)));
+        return "my_apps";
+    }
+
+    @GetMapping("/api/my-apps/status")
+    @org.springframework.web.bind.annotation.ResponseBody
+    public java.util.Map<String, Object> getMyAppsStatus(HttpSession session, @RequestParam String appName) {
+        java.util.Map<String, Object> response = new java.util.HashMap<>();
+        if (!isLoggedIn(session)) {
+            response.put("error", "Unauthorized");
+            return response;
+        }
+
+        Long userId = getUserId(session);
+        // Menggunakan LocalDate.now() untuk mengambil log aktivitas hari ini
+        List<AktivitasDigital> list = service.getAktivitasByUserAndTanggal(userId, LocalDate.now());
+        
+        Optional<AktivitasDigital> optAct = list.stream()
+                .filter(a -> a.getNamaAplikasi().equalsIgnoreCase(appName))
+                .findFirst();
+                
+        long sisaDetik = 0;
+        String status = "UNTRACKED";
+        String message = "";
+
+        if (optAct.isPresent()) {
+            AktivitasDigital act = optAct.get();
+            java.time.LocalTime now = java.time.LocalTime.now();
+            java.time.LocalTime mulai = act.getJamMulai();
+            java.time.LocalTime selesai = act.getJamSelesai();
+
+            if (mulai != null && selesai != null) {
+                if (now.isAfter(mulai) && now.isBefore(selesai)) {
+                    sisaDetik = java.time.Duration.between(now, selesai).getSeconds();
+                    status = "ACTIVE";
+                    message = "Sesi aktif terdeteksi.";
+                } else if (now.isBefore(mulai)) {
+                    sisaDetik = act.getDurasiMenit() * 60L;
+                    status = "WAITING";
+                    message = "Sesi dijadwalkan mulai pukul " + mulai;
+                } else {
+                    sisaDetik = 0;
+                    status = "EXPIRED";
+                    message = "Batas waktu penggunaan untuk sesi ini telah habis.";
+                }
+            } else {
+                sisaDetik = act.getDurasiMenit() * 60L;
+                status = "ACTIVE";
+                message = "Sesi aktif tanpa jadwal jam mulai.";
+            }
+        } else {
+            // Default demo mode: 30 menit
+            sisaDetik = 1800;
+            status = "UNTRACKED";
+            message = "Menggunakan waktu demo 30 menit. Silakan jadwalkan aktivitas untuk presisi lebih baik.";
+        }
+
+        response.put("appName", appName);
+        response.put("sisaDetik", sisaDetik);
+        response.put("status", status);
+        response.put("message", message);
+        return response;
+    }
+
+    @PostMapping("/api/my-apps/over-limit")
+    @org.springframework.web.bind.annotation.ResponseBody
+    public java.util.Map<String, Object> triggerOverLimitNotification(HttpSession session, @RequestParam String appName) {
+        java.util.Map<String, Object> response = new java.util.HashMap<>();
+        if (!isLoggedIn(session)) {
+            response.put("success", false);
+            return response;
+        }
+
+        Long userId = getUserId(session);
+        service.kirimNotifikasiOverLimit(userId, appName);
+        
+        response.put("success", true);
+        return response;
     }
 }

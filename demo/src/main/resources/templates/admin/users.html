@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="id">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Manage Users – MindFull</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com"/>
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous"/>
+    <link rel="stylesheet" href="../../static/style.css" th:href="@{/style.css}"/>
+</head>
+<body>
+
+    <!-- NAVBAR -->
+    <header class="navbar">
+        <div class="navbar-container">
+            <div class="navbar-left">
+                <a th:href="@{/admin/dashboard}" class="navbar-logo">
+                    <span class="navbar-logo-icon">🛡️</span>
+                    <span>MindFull Admin</span>
+                </a>
+                <ul class="navbar-menu">
+                    <li><a th:href="@{/admin/dashboard}" class="navbar-link" id="nav-admin-dashboard">Dashboard</a></li>
+                    <li><a th:href="@{/admin/users}" class="navbar-link active" id="nav-admin-users">Users</a></li>
+                    <li><a th:href="@{/admin/payments}" class="navbar-link" id="nav-admin-payments">Payments</a></li>
+                    <li><a th:href="@{/dashboard}" class="navbar-link">Switch to User View</a></li>
+                </ul>
+            </div>
+            <div class="navbar-right">
+                <!-- Profile Info -->
+                <div class="user-tag">
+                    <div class="navbar-avatar" th:text="${#strings.substring(session.username != null ? session.username : 'A', 0, 1)}">A</div>
+                    <div class="user-info-text">
+                        <span class="user-info-name" th:text="${session.namaUser}">Admin</span>
+                        <span class="user-info-role" th:text="${session.role}">ADMIN</span>
+                    </div>
+                    <a th:href="@{/logout}" class="btn btn-outline btn-sm" style="margin-left: 10px;">Logout</a>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="main-content">
+        <!-- Header halaman -->
+        <div class="page-header">
+            <div class="page-header-text">
+                <h1 class="page-judul">User Management</h1>
+                <p class="page-sub">Kelola pengguna terdaftar, perbarui role, serta aktifkan atau nonaktifkan akun.</p>
+            </div>
+        </div>
+
+        <!-- Pesan sukses atau error -->
+        <div th:if="${success}" class="alert alert-success">
+            <span th:text="${success}">Berhasil!</span>
+        </div>
+        <div th:if="${error}" class="alert alert-error">
+            <span th:text="${error}">Gagal!</span>
+        </div>
+
+        <!-- Table Card -->
+        <div class="card">
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Nama Lengkap</th>
+                            <th>Username</th>
+                            <th>Saldo Token</th>
+                            <th>Role</th>
+                            <th>Status</th>
+                            <th>Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:each="u : ${users}">
+                            <td th:text="${u.id}">1</td>
+                            <td class="app-name" th:text="${u.namaUser}">Nama</td>
+                            <td th:text="'@' + ${u.username}">Username</td>
+                            <td th:text="${u.token} + ' Token'">50 Token</td>
+                            <td>
+                                <span class="badge" th:classappend="${u.role == 'ADMIN' ? 'badge-success' : 'badge-info'}" th:text="${u.role}">USER</span>
+                            </td>
+                            <td>
+                                <span class="badge" th:classappend="${u.isActive() ? 'badge-success' : 'badge-danger'}" th:text="${u.isActive() ? 'AKTIF' : 'NONAKTIF'}">AKTIF</span>
+                            </td>
+                            <td>
+                                <div style="display: flex; gap: 8px; align-items: center;">
+                                    <!-- Edit Trigger Button -->
+                                    <button class="btn btn-outline btn-sm" th:onclick="openEditModal([[${u.id}]], [[${u.namaUser}]], [[${u.username}]], [[${u.role}]], [[${u.isActive()}]])">
+                                        Edit
+                                    </button>
+
+                                    <!-- Status Toggle Form -->
+                                    <form th:action="@{/admin/users/toggle}" method="post" style="margin: 0;">
+                                        <input type="hidden" name="userId" th:value="${u.id}"/>
+                                        <input type="hidden" name="isActive" th:value="${!u.isActive()}"/>
+                                        <button type="submit" class="btn btn-sm" th:classappend="${u.isActive() ? 'btn-danger' : 'btn-success'}" th:text="${u.isActive() ? 'Nonaktifkan' : 'Aktifkan'}">
+                                            Toggle
+                                        </button>
+                                    </form>
+
+                                    <!-- Delete Form -->
+                                    <form th:action="@{/admin/users/delete}" method="post" style="margin: 0;" onsubmit="return confirm('Apakah Anda yakin ingin menghapus pengguna ini secara permanen? Seluruh riwayat aktivitas akan ikut terhapus.')">
+                                        <input type="hidden" name="userId" th:value="${u.id}"/>
+                                        <button type="submit" class="btn btn-danger btn-sm">Hapus</button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+
+    <!-- EDIT USER MODAL -->
+    <div class="admin-modal" id="editUserModal">
+        <div class="admin-modal-content">
+            <div class="admin-modal-header">
+                <h3 class="admin-modal-title">Edit Pengguna</h3>
+                <button class="admin-modal-close" onclick="closeEditModal()">&times;</button>
+            </div>
+            <form th:action="@{/admin/users/update}" method="post">
+                <input type="hidden" name="userId" id="editUserId"/>
+                <div class="form-group">
+                    <label class="form-label">Nama Lengkap</label>
+                    <input type="text" name="namaUser" id="editNamaUser" class="form-control" required/>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Username</label>
+                    <input type="text" name="username" id="editUsername" class="form-control" required/>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Role</label>
+                    <select name="role" id="editRole" class="form-control">
+                        <option value="USER">USER</option>
+                        <option value="ADMIN">ADMIN</option>
+                    </select>
+                </div>
+                <div class="form-group" style="display: flex; align-items: center; gap: 10px; margin-top: 10px;">
+                    <input type="checkbox" name="isActive" id="editIsActive" value="true" style="width: 18px; height: 18px; cursor: pointer;"/>
+                    <label class="form-label" style="margin-bottom: 0; cursor: pointer;" for="editIsActive">Status Akun Aktif</label>
+                </div>
+                <div style="display: flex; gap: 12px; margin-top: 24px;">
+                    <button type="submit" class="btn btn-primary btn-full">Simpan</button>
+                    <button type="button" class="btn btn-outline btn-full" onclick="closeEditModal()">Batal</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- JS untuk Modal -->
+    <script>
+        function openEditModal(id, name, username, role, isActive) {
+            document.getElementById("editUserId").value = id;
+            document.getElementById("editNamaUser").value = name;
+            document.getElementById("editUsername").value = username;
+            document.getElementById("editRole").value = role;
+            document.getElementById("editIsActive").checked = (isActive === true);
+            document.getElementById("editUserModal").classList.add("open");
+        }
+        function closeEditModal() {
+            document.getElementById("editUserModal").classList.remove("open");
+        }
+    </script>
+</body>
+</html>

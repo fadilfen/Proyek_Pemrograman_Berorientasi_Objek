@@ -6,160 +6,128 @@
     <title>Activity Tracker – MindFull</title>
     <link rel="preconnect" href="https://fonts.googleapis.com"/>
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous"/>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
-    <link rel="stylesheet" th:href="@{/style.css}"/>
+    <link rel="stylesheet" href="../static/style.css" th:href="@{/style.css}"/>
 </head>
 <body>
 
-    <!-- ══════════════════════════════════════════════════════
-         SIDEBAR NAVIGASI
-         ══════════════════════════════════════════════════════ -->
-    <aside class="sidebar">
-
-        <div class="sidebar-logo">
-            <div class="sidebar-logo-icon">🧠</div>
-            MindFull
+    <!-- NAVBAR -->
+    <header class="navbar">
+        <div class="navbar-container">
+            <div class="navbar-left">
+                <a th:href="@{/dashboard}" class="navbar-logo">
+                    <span class="navbar-logo-icon">🧠</span>
+                    <span>MindFull</span>
+                </a>
+                <ul class="navbar-menu" th:if="${session.role != 'ADMIN'}">
+                    <li><a th:href="@{/dashboard}" class="navbar-link" id="nav-home">Home</a></li>
+                    <li><a th:href="@{/activity}" class="navbar-link active" id="nav-activity">Activities</a></li>
+                    <li><a th:href="@{/my-apps}" class="navbar-link" id="nav-myapps">My Apps</a></li>
+                    <li><a th:href="@{/report}" class="navbar-link" id="nav-report">Reports</a></li>
+                    <li><a th:href="@{/topup}" class="navbar-link" id="nav-topup">Top Up</a></li>
+                    <li><a th:href="@{/profile}" class="navbar-link" id="nav-profile">Profile</a></li>
+                </ul>
+                <ul class="navbar-menu" th:if="${session.role == 'ADMIN'}">
+                    <li><a th:href="@{/admin/dashboard}" class="navbar-link" id="nav-admin-dashboard">Admin Dashboard</a></li>
+                    <li><a th:href="@{/admin/users}" class="navbar-link" id="nav-admin-users">Users</a></li>
+                    <li><a th:href="@{/admin/payments}" class="navbar-link" id="nav-admin-payments">Payments</a></li>
+                    <li><a th:href="@{/dashboard}" class="navbar-link">Switch to User View</a></li>
+                </ul>
+            </div>
+            <div class="navbar-right">
+                <!-- Notification Bell -->
+                <div class="notif-container" id="notifContainer">
+                    <button class="notif-bell" id="notifBellBtn">
+                        🔔
+                        <span class="notif-badge" id="notifCount" style="display: none;">0</span>
+                    </button>
+                    <div class="notif-dropdown" id="notifDropdown">
+                        <div class="notif-header">
+                            <span class="notif-header-title">Notifikasi</span>
+                            <button class="notif-btn-clear" id="notifMarkAllBtn">Tandai semua dibaca</button>
+                        </div>
+                        <div class="notif-list" id="notifList">
+                            <div class="notif-empty">Tidak ada notifikasi</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Profile Info -->
+                <div class="user-tag">
+                    <div class="navbar-avatar" th:text="${#strings.substring(session.username != null ? session.username : 'U', 0, 1)}">U</div>
+                    <div class="user-info-text">
+                        <span class="user-info-name" th:text="${session.namaUser}">User</span>
+                        <span class="user-info-role" th:text="${session.role}">USER</span>
+                    </div>
+                    <a th:href="@{/logout}" class="btn btn-outline btn-sm" style="margin-left: 10px;">Logout</a>
+                </div>
+            </div>
         </div>
+    </header>
 
-        <div class="sidebar-profile">
-            <div class="avatar"
-                 th:text="${#strings.substring(session.namaUser, 0, 1)}">A</div>
-            <div>
-                <div class="profile-nama" th:text="${session.namaUser}">User</div>
-                <div class="profile-role">Member</div>
+    <main class="main-content">
+        <!-- Header halaman -->
+        <div class="page-header">
+            <div class="page-header-text">
+                <h1 class="page-judul">Activity Tracker</h1>
+                <p class="page-sub">Catat dan pantau waktu screen time harian Anda.</p>
             </div>
         </div>
 
-        <div class="nav-section">Menu</div>
-
-        <a th:href="@{/dashboard}" class="nav-item">
-            <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
-            Dashboard
-        </a>
-        <a th:href="@{/activity}" class="nav-item active">
-            <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
-            Activity Tracker
-        </a>
-        <a th:href="@{/topup}" class="nav-item">
-            <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
-            Top Up Balance
-        </a>
-        <a th:href="@{/report}" class="nav-item">
-            <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
-            Health Report
-        </a>
-        <a th:href="@{/profile}" class="nav-item">
-            <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-            Profile
-        </a>
-
-        <div class="sidebar-footer">
-            <a th:href="@{/logout}" class="btn-logout">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
-                Logout
-            </a>
-        </div>
-    </aside>
-
-    <!-- ══════════════════════════════════════════════════════
-         KONTEN UTAMA
-         ══════════════════════════════════════════════════════ -->
-    <main class="main">
-
-        <!-- Header halaman -->
-        <div class="page-header">
-            <div class="page-judul">Activity Tracker</div>
-            <div class="page-sub">Catat dan pantau penggunaan aplikasi digital kamu</div>
-        </div>
-
-        <!-- Pesan sukses atau error dari controller -->
+        <!-- Pesan sukses atau error -->
         <div th:if="${success}" class="alert alert-success">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
-            <span th:text="${success}"></span>
+            <span th:text="${success}">Berhasil!</span>
         </div>
         <div th:if="${error}" class="alert alert-error">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-            <span th:text="${error}"></span>
+            <span th:text="${error}">Gagal!</span>
         </div>
 
-        <!-- Layout dua kolom: form kiri (fixed width), tabel kanan -->
-        <div class="two-col">
-
-            <!-- ── Form Tambah Aktivitas ── -->
+        <div class="two-col" style="margin-top: 24px;">
+            <!-- Form Log Aktivitas -->
             <div class="card">
-                <div class="card-title">Log Aktivitas Baru</div>
-
-                <!-- Form dikirim ke MainController.addActivity() -->
+                <h3 class="card-title">Catat Aktivitas Baru</h3>
                 <form th:action="@{/activity/add}" method="post">
-
-                    <!-- Pilihan aplikasi -->
                     <div class="form-group">
                         <label class="form-label">Aplikasi</label>
                         <select name="namaAplikasi" class="form-control">
-                            <option value="TikTok">🎵  TikTok</option>
-                            <option value="Instagram">📸  Instagram</option>
-                            <option value="YouTube">▶️  YouTube</option>
-                            <option value="WhatsApp">💬  WhatsApp</option>
-                            <option value="Netflix">🎬  Netflix</option>
-                            <option value="Spotify">🎧  Spotify</option>
+                            <option value="TikTok">🎵 TikTok</option>
+                            <option value="Instagram">📸 Instagram</option>
+                            <option value="YouTube">▶️ YouTube</option>
+                            <option value="WhatsApp">💬 WhatsApp</option>
+                            <option value="Netflix">🎬 Netflix</option>
+                            <option value="Spotify">🎧 Spotify</option>
                         </select>
                     </div>
 
-                    <!-- Input durasi penggunaan -->
                     <div class="form-group">
-                        <label class="form-label">Durasi (menit)</label>
-                        <input type="number"
-                               name="durasiMenit"
-                               class="form-control"
-                               placeholder="Contoh: 45"
-                               min="1"
-                               required/>
+                        <label class="form-label">Jam Mulai</label>
+                        <input type="time" name="jamMulai" class="form-control" required/>
                     </div>
 
-                    <!-- Input batas durasi harian -->
                     <div class="form-group">
-                        <label class="form-label">Batas Harian (menit)</label>
-                        <input type="number"
-                               name="batasDurasi"
-                               class="form-control"
-                               placeholder="Contoh: 60"
-                               min="1"
-                               required/>
+                        <label class="form-label">Durasi (Menit)</label>
+                        <input type="number" name="durasiMenit" class="form-control" placeholder="Contoh: 45" min="1" required/>
                     </div>
 
-                    <!-- Input tanggal, default hari ini -->
                     <div class="form-group">
                         <label class="form-label">Tanggal</label>
-                        <input type="date"
-                               name="tanggal"
-                               class="form-control"
-                               th:value="${#temporals.format(today, 'yyyy-MM-dd')}"
-                               required/>
+                        <input type="date" name="tanggal" class="form-control" th:value="${#temporals.format(today, 'yyyy-MM-dd')}" required/>
                     </div>
 
-                    <!-- Info potongan token -->
-                    <div style="display: flex; align-items: center; gap: 8px; padding: 10px 14px;
-                                background: var(--primary-dim); border-radius: 8px;
-                                margin-bottom: 16px; font-size: 12px; color: #a5b4fc;">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-                        Setiap log aktivitas memotong <strong style="margin: 0 3px;">5 token</strong> dari saldo kamu
+                    <div class="balance-box" style="margin-bottom: 16px; padding: 12px 14px;">
+                        <span style="font-size: 11px; color: var(--text-2); line-height: 1.4;">
+                             ℹ️ Log aktivitas memotong <strong>5 token</strong> dari saldo Anda.
+                        </span>
                     </div>
 
-                    <!-- Tombol submit -->
-                    <button type="submit" class="btn btn-primary btn-full">
-                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-                        Log Activity
-                    </button>
+                    <button type="submit" class="btn btn-primary btn-full">Catat Aktivitas</button>
                 </form>
             </div>
 
-            <!-- ── Tabel Riwayat Aktivitas ── -->
+            <!-- Tabel Riwayat -->
             <div class="card">
-                <!-- Header tabel dengan jumlah aktivitas -->
                 <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px;">
-                    <div class="card-title" style="margin-bottom: 0;">Activity Log</div>
-                    <span style="font-size: 12px; color: var(--text-3);"
-                          th:text="${#lists.size(aktivitasList)} + ' aktivitas'">0 aktivitas</span>
+                    <h3 class="card-title" style="margin-bottom: 0;">Riwayat Aktivitas</h3>
+                    <span class="badge badge-indigo" th:text="${#lists.size(aktivitasList)} + ' log'">0 log</span>
                 </div>
 
                 <div class="table-wrapper">
@@ -168,58 +136,142 @@
                             <tr>
                                 <th>Aplikasi</th>
                                 <th>Durasi</th>
-                                <th>Batas</th>
+                                <th>Waktu Penggunaan</th>
                                 <th>Tanggal</th>
                                 <th>Status</th>
                             </tr>
                         </thead>
                         <tbody>
-                            <!-- Iterasi daftar aktivitas milik user yang sedang login -->
                             <tr th:each="a : ${aktivitasList}">
-                                <!-- Kolom nama aplikasi dengan ikon emoji -->
                                 <td>
                                     <div class="app-cell">
-                                        <div class="app-icon"
-                                             th:text="${a.namaAplikasi == 'TikTok'} ? '🎵' :
-                                                       (${a.namaAplikasi == 'Instagram'} ? '📸' :
-                                                       (${a.namaAplikasi == 'YouTube'} ? '▶️' :
-                                                       (${a.namaAplikasi == 'WhatsApp'} ? '💬' :
-                                                       (${a.namaAplikasi == 'Netflix'} ? '🎬' :
-                                                       (${a.namaAplikasi == 'Spotify'} ? '🎧' : '📱')))))">📱</div>
+                                        <div class="app-icon" th:text="${a.namaAplikasi == 'TikTok' ? '🎵' :
+                                                                          (a.namaAplikasi == 'Instagram' ? '📸' :
+                                                                          (a.namaAplikasi == 'YouTube' ? '▶️' :
+                                                                          (a.namaAplikasi == 'WhatsApp' ? '💬' :
+                                                                          (a.namaAplikasi == 'Netflix' ? '🎬' :
+                                                                          (a.namaAplikasi == 'Spotify' ? '🎧' : '📱')))))}">📱</div>
                                         <span class="app-name" th:text="${a.namaAplikasi}">App</span>
                                     </div>
                                 </td>
-                                <td th:text="${a.durasiMenit} + ' min'"></td>
-                                <td th:text="${a.batasDurasi} + ' min'"></td>
+                                <td th:text="${a.durasiMenit} + ' m'"></td>
+                                <td th:text="${a.jamMulai != null ? #temporals.format(a.jamMulai, 'HH:mm') + ' - ' + #temporals.format(a.getJamSelesai(), 'HH:mm') : '-'}"></td>
                                 <td th:text="${#temporals.format(a.tanggal, 'dd MMM yyyy')}"></td>
-                                <!-- Badge status: hijau jika sehat, merah jika over limit -->
                                 <td>
-                                    <span th:if="${!a.melebihiBatas()}" class="badge badge-success">
-                                        ✓ Healthy
-                                    </span>
-                                    <span th:if="${a.melebihiBatas()}" class="badge badge-danger">
-                                        ✕ Over Limit
-                                    </span>
+                                    <span th:if="${!a.melebihiBatas()}" class="badge badge-success">Sehat ✓</span>
+                                    <span th:if="${a.melebihiBatas()}" class="badge badge-danger">Over Limit ⚠️</span>
                                 </td>
                             </tr>
-
-                            <!-- Tampilkan empty state jika belum ada aktivitas -->
                             <tr th:if="${#lists.isEmpty(aktivitasList)}">
-                                <td colspan="5">
-                                    <div class="empty-state">
-                                        <div style="font-size: 32px; margin-bottom: 8px;">📭</div>
-                                        Belum ada aktivitas yang dicatat.<br/>
-                                        <span style="color: var(--text-3);">Gunakan form di sebelah kiri untuk mulai log.</span>
-                                    </div>
+                                <td colspan="5" class="empty-state">
+                                    <div style="font-size: 32px; margin-bottom: 12px;">📭</div>
+                                    Tidak ada data aktivitas.<br/>
+                                    <span style="color: var(--text-3);">Catat aktivitas baru di form kiri.</span>
                                 </td>
                             </tr>
                         </tbody>
                     </table>
                 </div>
             </div>
-
         </div>
     </main>
 
+    <!-- NOTIFICATION SCRIPT -->
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            const notifBellBtn = document.getElementById("notifBellBtn");
+            const notifDropdown = document.getElementById("notifDropdown");
+            const notifCount = document.getElementById("notifCount");
+            const notifList = document.getElementById("notifList");
+            const notifMarkAllBtn = document.getElementById("notifMarkAllBtn");
+
+            notifBellBtn.addEventListener("click", function(e) {
+                e.stopPropagation();
+                notifDropdown.classList.toggle("open");
+            });
+
+            document.addEventListener("click", function(e) {
+                if (!notifDropdown.contains(e.target) && e.target !== notifBellBtn) {
+                    notifDropdown.classList.remove("open");
+                }
+            });
+
+            function loadNotifications() {
+                fetch('/api/notifications')
+                    .then(response => response.json())
+                    .then(data => {
+                        const count = data.unreadCount;
+                        if (count > 0) {
+                            notifCount.textContent = count;
+                            notifCount.style.display = "flex";
+                        } else {
+                            notifCount.style.display = "none";
+                        }
+
+                        const list = data.notifications;
+                        notifList.innerHTML = "";
+
+                        if (list.length === 0) {
+                            notifList.innerHTML = '<div class="notif-empty">Tidak ada notifikasi</div>';
+                            return;
+                        }
+
+                        list.forEach(notif => {
+                            const isUnread = !notif.read;
+                            const item = document.createElement("div");
+                            item.className = `notif-item ${isUnread ? 'unread' : ''}`;
+                            
+                            let icon = "ℹ️";
+                            if (notif.tipe === "SUCCESS") icon = "✅";
+                            if (notif.tipe === "WARNING") icon = "⚠️";
+                            if (notif.tipe === "DANGER") icon = "❌";
+
+                            item.innerHTML = `
+                                <div class="notif-icon ${notif.tipe}">${icon}</div>
+                                <div class="notif-body">
+                                    <div class="notif-title">${notif.judul}</div>
+                                    <div class="notif-text">${notif.pesan}</div>
+                                    <div class="notif-actions">
+                                        ${isUnread ? `<button class="notif-action-btn read" data-id="${notif.id}">Tandai dibaca</button>` : ''}
+                                        <button class="notif-action-btn delete" data-id="${notif.id}">Hapus</button>
+                                    </div>
+                                </div>
+                            `;
+                            
+                            item.querySelectorAll(".notif-action-btn.read").forEach(btn => {
+                                btn.addEventListener("click", function(e) {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    const id = btn.getAttribute("data-id");
+                                    fetch(`/api/notifications/${id}/read`, { method: 'POST' })
+                                        .then(() => loadNotifications());
+                                });
+                            });
+
+                            item.querySelectorAll(".notif-action-btn.delete").forEach(btn => {
+                                btn.addEventListener("click", function(e) {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    const id = btn.getAttribute("data-id");
+                                    fetch(`/api/notifications/${id}`, { method: 'DELETE' })
+                                        .then(() => loadNotifications());
+                                });
+                            });
+
+                            notifList.appendChild(item);
+                        });
+                    });
+            }
+
+            notifMarkAllBtn.addEventListener("click", function(e) {
+                e.preventDefault();
+                fetch('/api/notifications/read-all', { method: 'POST' })
+                    .then(() => loadNotifications());
+            });
+
+            loadNotifications();
+            setInterval(loadNotifications, 30000);
+        });
+    </script>
 </body>
 </html>
