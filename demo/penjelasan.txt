@@ -1,0 +1,127 @@
+========================================================================
+             DOKUMENTASI KONSEP OOP PADA PROYEK MINDFULL
+========================================================================
+Aplikasi MindFull dirancang dengan menerapkan 5 prinsip utama Pemrograman 
+Berorientasi Objek (Object-Oriented Programming - OOP). Berikut adalah 
+penjelasan lengkap, struktur, serta contoh penerapannya dalam kode:
+
+------------------------------------------------------------------------
+1. KELAS (CLASS) & OBJEK (OBJECT)
+------------------------------------------------------------------------
+* Definisi:
+  - Kelas adalah blueprint atau rancangan cetakan yang mendefinisikan 
+    atribut (state) dan metode (behavior) untuk objek sejenis.
+  - Objek adalah instansi nyata/riil dari kelas yang dibuat di memori 
+    saat aplikasi dijalankan.
+
+* Penerapan pada Proyek:
+  Di MindFull, kelas murni OOP digunakan sebagai model data (Entities):
+  a. Kelas User (User.java): 
+     Mewakili cetakan data pengguna (namaUser, username, password, token).
+  b. Kelas AktivitasDigital (AktivitasDigital.java): 
+     Mewakili cetakan data sesi penggunaan aplikasi (namaAplikasi, durasi, jamMulai).
+  c. Kelas Payment (Payment.java): 
+     Mewakili cetakan log transaksi keuangan / top up koin.
+
+* Contoh Instansiasi Objek secara Manual:
+  AktivitasDigital aktivitas = new AktivitasDigital(namaAplikasi, durasi, durasi, jamMulai, tanggal, user);
+  (Di sini, 'AktivitasDigital' adalah Kelas, sedangkan 'aktivitas' adalah Objek konkret).
+
+* Contoh Instansiasi Otomatis (Spring Bean):
+  Spring Framework menginstansiasi secara otomatis kelas Controller dan Service 
+  menggunakan pola Singleton saat startup aplikasi.
+
+------------------------------------------------------------------------
+2. ENKAPSULASI (ENCAPSULATION)
+------------------------------------------------------------------------
+* Definisi:
+  Enkapsulasi adalah pembungkusan data (atribut) dan perilaku (metode) 
+  ke dalam satu unit kelas serta menyembunyikan state internal objek dari 
+  akses luar secara langsung (Data Hiding). Hak akses atribut diatur menjadi 
+  private, dan dimodifikasi melalui metode public Getter (Accessor) dan 
+  Setter (Mutator).
+
+* Penerapan pada Proyek:
+  - Menyembunyikan atribut penting menggunakan kata kunci 'private'.
+  - Menyediakan getter/setter untuk validasi dan sanitasi data masukan.
+  
+* Contoh Kode (Payment.java):
+  private String status = "PENDING"; // disembunyikan secara private
+
+  public String getStatus() { // Getter untuk membaca
+      return this.status;
+  }
+
+  public void setStatus(String status) { // Setter untuk mengubah secara terkontrol
+      this.status = status;
+  }
+
+* Contoh Abstraksi Perhitungan internal (AktivitasDigital.java):
+  Method getJamSelesai() mengkalkulasi jam selesai tanpa mengekspos rumus 
+  penjumlahannya ke controller luar:
+  public LocalTime getJamSelesai() {
+      if (jamMulai == null) return null;
+      return jamMulai.plusMinutes(durasiMenit);
+  }
+
+------------------------------------------------------------------------
+3. PEWARISAN (INHERITANCE)
+------------------------------------------------------------------------
+* Definisi:
+  Mekanisme di mana subclass (kelas anak) mewarisi data dan fungsionalitas 
+  dari superclass (kelas induk) menggunakan kata kunci 'extends'. Mendukung 
+  prinsip penggunaan kembali kode (Code Reusability).
+
+* Penerapan pada Proyek:
+  Pewarisan paling dominan digunakan pada lapisan akses data (Repository).
+  
+* Contoh Kode (PaymentRepository.java):
+  public interface PaymentRepository extends JpaRepository<Payment, Long> {
+      // Mewarisi semua metode CRUD dari JpaRepository bawaan Spring Framework.
+  }
+
+* Manfaat:
+  Di service layer, kita dapat langsung memanggil method database seperti:
+  paymentRepo.save(payment); // save() diwarisi langsung dari JpaRepository.
+  paymentRepo.findAll();     // findAll() diwarisi langsung dari JpaRepository.
+
+------------------------------------------------------------------------
+4. POLIMORFISME (POLYMORPHISM)
+------------------------------------------------------------------------
+* Definisi:
+  Kemampuan suatu entitas (metode/objek) untuk memiliki banyak bentuk. 
+  Terbagi menjadi:
+  - Polimorfisme Statis (Overloading): Nama method sama, parameter berbeda.
+  - Polimorfisme Dinamis (Overriding): Subclass menulis ulang method superclass.
+
+* Penerapan pada Proyek:
+  a. Constructor Overloading (AktivitasDigital.java):
+     Memiliki 3 konstruktor dengan parameter berbeda untuk melayani inisialisasi yang berbeda:
+     - public AktivitasDigital() { ... }
+     - public AktivitasDigital(String namaAplikasi, int durasiMenit, int batasDurasi, LocalDate tanggal, User user) { ... }
+     - public AktivitasDigital(String namaAplikasi, int durasiMenit, int batasDurasi, LocalTime jamMulai, LocalDate tanggal, User user) { ... }
+
+  b. Runtime Polymorphism (Spring DI):
+     Di Controller, Spring secara dinamis menyuntikkan (inject) objek konkret 
+     dari proxy repository ke variabel antarmuka (interface) JpaRepository.
+
+------------------------------------------------------------------------
+5. ABSTRAKSI (ABSTRACTION)
+------------------------------------------------------------------------
+* Definisi:
+  Menyembunyikan detail implementasi sistem tingkat rendah yang rumit dan 
+  hanya mengekspos antarmuka / fungsionalitas esensial.
+
+* Penerapan pada Proyek:
+  - Repositori (PaymentRepository, UserRepository): 
+    Developer hanya menuliskan deklarasi method, framework Spring Data JPA 
+    yang menyembunyikan pembuatan query SQL dan koneksi JDBC ke MySQL.
+  - Lapisan Layanan (MindFullService): 
+    MainController hanya memanggil method abstrak seperti 'service.confirmQrisTopUp(userId)' 
+    tanpa perlu tahu logika rumit peninjauan, pengubahan status di DB, 
+    dan pembuatan notifikasi otomatis.
+  - Pembuatan PDF (PdfService): 
+    Controller memanggil 'pdfService.generatePdfReport(laporanData)' 
+    tanpa harus berurusan dengan cara penataan margin, pembuatan baris tabel, 
+    atau inisialisasi driver iText7.
+========================================================================
