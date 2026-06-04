@@ -133,14 +133,26 @@ public class MindFullService {
     /**
      * Menambahkan aktivitas digital baru dan memotong 5 token dari user.
      * Jika durasi melebihi batas, kirim notifikasi peringatan.
-     * Mengembalikan false jika token tidak cukup (minimal 5 token).
+     * Mengembalikan null jika berhasil, atau String pesan error jika gagal.
+     *
+     * Validasi:
+     * - User harus ada dan memiliki minimal 5 token.
+     * - Tidak boleh ada entri duplikat untuk aplikasi yang sama di tanggal yang sama.
      */
-    public boolean tambahAktivitas(Long userId, String namaAplikasi,
+    public String tambahAktivitas(Long userId, String namaAplikasi,
                                    int durasi, java.time.LocalTime jamMulai, LocalDate tanggal) {
         User user = userRepo.findById(userId).orElse(null);
 
         // Validasi: user harus ada dan memiliki minimal 5 token
-        if (user == null || user.getToken() < 5) return false;
+        if (user == null || user.getToken() < 5) {
+            return "Token tidak cukup! Minimal 5 token untuk log aktivitas.";
+        }
+
+        // Validasi: cek duplikat — tidak boleh set screen time untuk aplikasi yang sama di hari yang sama
+        if (aktivitasRepo.existsByUserIdAndNamaAplikasiIgnoreCaseAndTanggal(userId, namaAplikasi, tanggal)) {
+            return "Anda sudah mencatat screen time untuk " + namaAplikasi + " pada tanggal ini. "
+                 + "Setiap aplikasi hanya boleh dicatat satu kali per hari.";
+        }
 
         // Set batas durasi sama dengan durasi menit untuk menjaga kompatibilitas DB
         AktivitasDigital aktivitas = new AktivitasDigital(namaAplikasi, durasi, durasi, jamMulai, tanggal, user);
@@ -161,7 +173,7 @@ public class MindFullService {
             );
         }
 
-        return true;
+        return null; // null berarti sukses
     }
 
     /**

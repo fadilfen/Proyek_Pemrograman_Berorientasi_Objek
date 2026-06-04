@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="id">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>My Apps – MindFull</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com"/>
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous"/>
+    <link rel="stylesheet" href="../static/style.css" th:href="@{/style.css}"/>
+</head>
+<body>
+
+    <!-- NAVBAR -->
+    <header class="navbar">
+        <div class="navbar-container">
+            <div class="navbar-left">
+                <a th:href="@{/dashboard}" class="navbar-logo">
+                    <span class="navbar-logo-icon">🧠</span>
+                    <span>MindFull</span>
+                </a>
+                <ul class="navbar-menu" th:if="${session.role != 'ADMIN'}">
+                    <li><a th:href="@{/dashboard}" class="navbar-link" id="nav-home">Home</a></li>
+                    <li><a th:href="@{/activity}" class="navbar-link" id="nav-activity">Activities</a></li>
+                    <li><a th:href="@{/my-apps}" class="navbar-link active" id="nav-myapps">My Apps</a></li>
+                    <li><a th:href="@{/report}" class="navbar-link" id="nav-report">Reports</a></li>
+                    <li><a th:href="@{/topup}" class="navbar-link" id="nav-topup">Top Up</a></li>
+                    <li><a th:href="@{/profile}" class="navbar-link" id="nav-profile">Profile</a></li>
+                </ul>
+                <ul class="navbar-menu" th:if="${session.role == 'ADMIN'}">
+                    <li><a th:href="@{/admin/dashboard}" class="navbar-link" id="nav-admin-dashboard">Admin Dashboard</a></li>
+                    <li><a th:href="@{/admin/users}" class="navbar-link" id="nav-admin-users">Users</a></li>
+                    <li><a th:href="@{/admin/payments}" class="navbar-link" id="nav-admin-payments">Payments</a></li>
+                    <li><a th:href="@{/dashboard}" class="navbar-link">Switch to User View</a></li>
+                </ul>
+            </div>
+            <div class="navbar-right">
+                <!-- Notification Bell -->
+                <div class="notif-container" id="notifContainer">
+                    <button class="notif-bell" id="notifBellBtn">
+                        🔔
+                        <span class="notif-badge" id="notifCount" style="display: none;">0</span>
+                    </button>
+                    <div class="notif-dropdown" id="notifDropdown">
+                        <div class="notif-header">
+                            <span class="notif-header-title">Notifikasi</span>
+                            <button class="notif-btn-clear" id="notifMarkAllBtn">Tandai semua dibaca</button>
+                        </div>
+                        <div class="notif-list" id="notifList">
+                            <div class="notif-empty">Tidak ada notifikasi</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Profile Info -->
+                <div class="user-tag">
+                    <div class="navbar-avatar" th:text="${#strings.substring(session.username != null ? session.username : 'U', 0, 1)}">U</div>
+                    <div class="user-info-text">
+                        <span class="user-info-name" th:text="${session.namaUser}">User</span>
+                        <span class="user-info-role" th:text="${session.role}">USER</span>
+                    </div>
+                    <a th:href="@{/logout}" class="btn btn-outline btn-sm" style="margin-left: 10px;">Logout</a>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="main-content">
+        <div class="page-header">
+            <div class="page-header-text">
+                <h1 class="page-judul">My Apps Simulator</h1>
+                <p class="page-sub">Simulasikan penggunaan aplikasi di handphone Anda dan pantau sisa batas waktu secara realtime.</p>
+            </div>
+        </div>
+
+        <div class="apps-simulator-layout">
+            <!-- App Grid -->
+            <div class="apps-grid-card">
+                <h3 class="card-title" style="margin-bottom: 24px;">Daftar Aplikasi</h3>
+                
+                <div class="myapps-grid">
+                    <!-- TikTok -->
+                    <div class="myapp-item" data-app="TikTok">
+                        <div class="myapp-icon tik-tok">🎵</div>
+                        <div class="myapp-details">
+                            <div class="myapp-name">TikTok</div>
+                            <div class="myapp-desc">Sosial media video pendek.</div>
+                        </div>
+                        <button class="btn btn-primary btn-sm btn-open-app" onclick="openSmartphone('TikTok')">Buka</button>
+                    </div>
+
+                    <!-- Instagram -->
+                    <div class="myapp-item" data-app="Instagram">
+                        <div class="myapp-icon instagram">📸</div>
+                        <div class="myapp-details">
+                            <div class="myapp-name">Instagram</div>
+                            <div class="myapp-desc">Berbagi foto dan reels seru.</div>
+                        </div>
+                        <button class="btn btn-primary btn-sm btn-open-app" onclick="openSmartphone('Instagram')">Buka</button>
+                    </div>
+
+                    <!-- YouTube -->
+                    <div class="myapp-item" data-app="YouTube">
+                        <div class="myapp-icon youtube">▶️</div>
+                        <div class="myapp-details">
+                            <div class="myapp-name">YouTube</div>
+                            <div class="myapp-desc">Nonton video dan streaming.</div>
+                        </div>
+                        <button class="btn btn-primary btn-sm btn-open-app" onclick="openSmartphone('YouTube')">Buka</button>
+                    </div>
+
+                    <!-- WhatsApp -->
+                    <div class="myapp-item" data-app="WhatsApp">
+                        <div class="myapp-icon whatsapp">💬</div>
+                        <div class="myapp-details">
+                            <div class="myapp-name">WhatsApp</div>
+                            <div class="myapp-desc">Chatting dengan kerabat dekat.</div>
+                        </div>
+                        <button class="btn btn-primary btn-sm btn-open-app" onclick="openSmartphone('WhatsApp')">Buka</button>
+                    </div>
+
+                    <!-- Netflix -->
+                    <div class="myapp-item" data-app="Netflix">
+                        <div class="myapp-icon netflix">🎬</div>
+                        <div class="myapp-details">
+                            <div class="myapp-name">Netflix</div>
+                            <div class="myapp-desc">Film dan seri televisi premium.</div>
+                        </div>
+                        <button class="btn btn-primary btn-sm btn-open-app" onclick="openSmartphone('Netflix')">Buka</button>
+                    </div>
+
+                    <!-- Spotify -->
+                    <div class="myapp-item" data-app="Spotify">
+                        <div class="myapp-icon spotify">🎧</div>
+                        <div class="myapp-details">
+                            <div class="myapp-name">Spotify</div>
+                            <div class="myapp-desc">Dengarkan musik favorit Anda.</div>
+                        </div>
+                        <button class="btn btn-primary btn-sm btn-open-app" onclick="openSmartphone('Spotify')">Buka</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Smartphone Frame Mockup Container -->
+            <div class="smartphone-display-card">
+                <div class="phone-wrapper">
+                    <!-- HP Frame -->
+                    <div class="smartphone-frame">
+                        <!-- Top Notch -->
+                        <div class="phone-notch">
+                            <div class="camera"></div>
+                            <div class="speaker"></div>
+                        </div>
+                        
+                        <!-- Screen -->
+                        <div class="phone-screen" id="phoneScreen">
+                            <!-- Home Screen (Initial) -->
+                            <div class="phone-homescreen" id="phoneHome">
+                                <div class="phone-header-info">
+                                    <span id="phoneTime">08:00</span>
+                                    <div class="phone-icons">⚡ 📶 🔋 100%</div>
+                                </div>
+                                
+                                <div class="homescreen-content">
+                                    <h4 class="homescreen-title">MindPhone OS</h4>
+                                    <p class="homescreen-sub">Pilih aplikasi di sebelah kiri untuk membukanya.</p>
+                                    
+                                    <!-- App Grid Icons -->
+                                    <div class="phone-app-icons">
+                                        <div class="phone-icon-app" onclick="openSmartphone('TikTok')">
+                                            <div class="app-dot-icon" style="background: linear-gradient(135deg, #00f2fe 0%, #4facfe 100%);">🎵</div>
+                                            <span>TikTok</span>
+                                        </div>
+                                        <div class="phone-icon-app" onclick="openSmartphone('Instagram')">
+                                            <div class="app-dot-icon" style="background: linear-gradient(135deg, #f857a6 0%, #ff5858 100%);">📸</div>
+                                            <span>Insta</span>
+                                        </div>
+                                        <div class="phone-icon-app" onclick="openSmartphone('YouTube')">
+                                            <div class="app-dot-icon" style="background: linear-gradient(135deg, #ff0000 0%, #ff6b6b 100%);">▶️</div>
+                                            <span>YouTube</span>
+                                        </div>
+                                        <div class="phone-icon-app" onclick="openSmartphone('WhatsApp')">
+                                            <div class="app-dot-icon" style="background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);">💬</div>
+                                            <span>WA</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- App Container (Dynamic Load) -->
+                            <div class="phone-app-view" id="phoneAppView" style="display: none;">
+                                <!-- Floating Status/Countdown Bar -->
+                                <div class="phone-app-topbar">
+                                    <button class="btn-phone-back" onclick="closeApp()">< Kembali</button>
+                                    <div class="app-countdown-wrap">
+                                        <span class="app-timer-badge" id="appTimerBadge">30:00</span>
+                                    </div>
+                                </div>
+
+                                <!-- App Dynamic Body -->
+                                <div class="phone-app-body" id="phoneAppBody">
+                                    <!-- Dynamic layout injected via JS -->
+                                </div>
+                            </div>
+                            
+                            <!-- Over Limit / Blocked Screen -->
+                            <div class="phone-block-screen" id="phoneBlockScreen" style="display: none;">
+                                <div class="block-content">
+                                    <div style="font-size: 54px; margin-bottom: 20px;">🔒</div>
+                                    <h4 style="margin-bottom: 12px; color: #ff6b6b; font-weight: 800;">Waktu Habis!</h4>
+                                    <p style="font-size: 13px; color: var(--text-2); line-height: 1.5; margin-bottom: 24px;" id="phoneBlockMessage">
+                                        Batas waktu screen time untuk aplikasi ini telah habis demi kesehatan mental Anda.
+                                    </p>
+                                    <button class="btn btn-outline btn-sm" onclick="closeApp()">Kembali ke Home</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Home Indicator Bar -->
+                        <div class="phone-home-indicator" onclick="closeApp()"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- REALTIME SCRIPT -->
+    <script>
+        let countdownInterval = null;
+        let sisaDetikGlobal = 0;
+        let activeAppName = "";
+
+        // Update waktu di header handphone
+        function updatePhoneClock() {
+            const now = new Date();
+            const hours = String(now.getHours()).padStart(2, '0');
+            const minutes = String(now.getMinutes()).padStart(2, '0');
+            const phoneTimeEl = document.getElementById("phoneTime");
+            if (phoneTimeEl) {
+                phoneTimeEl.textContent = `${hours}:${minutes}`;
+            }
+        }
+        setInterval(updatePhoneClock, 1000);
+        updatePhoneClock();
+
+        function formatTimer(totalDetik) {
+            const m = Math.floor(totalDetik / 60);
+            const s = totalDetik % 60;
+            return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+        }
+
+        function openSmartphone(appName) {
+            if (countdownInterval) clearInterval(countdownInterval);
+            activeAppName = appName;
+
+            // Panggil API status backend
+            fetch(`/api/my-apps/status?appName=${appName}`)
+                .then(res => res.json())
+                .then(data => {
+                    const timerBadge = document.getElementById("appTimerBadge");
+                    const phoneHome = document.getElementById("phoneHome");
+                    const phoneAppView = document.getElementById("phoneAppView");
+                    const phoneBlockScreen = document.getElementById("phoneBlockScreen");
+                    const phoneBlockMessage = document.getElementById("phoneBlockMessage");
+                    const appBody = document.getElementById("phoneAppBody");
+
+                    if (data.status === "WAITING") {
+                        // Sesi terjadwal tapi belum mulai
+                        phoneHome.style.display = "none";
+                        phoneAppView.style.display = "none";
+                        phoneBlockScreen.style.display = "flex";
+                        phoneBlockMessage.textContent = data.message;
+                        return;
+                    }
+
+                    if (data.sisaDetik <= 0) {
+                        // Waktu habis / terblokir
+                        phoneHome.style.display = "none";
+                        phoneAppView.style.display = "none";
+                        phoneBlockScreen.style.display = "flex";
+                        phoneBlockMessage.textContent = data.message || "Waktu penggunaan aplikasi ini telah berakhir untuk sesi hari ini.";
+                        return;
+                    }
+
+                    // Muat aplikasi
+                    phoneHome.style.display = "none";
+                    phoneBlockScreen.style.display = "none";
+                    phoneAppView.style.display = "flex";
+
+                    // Injeksi content dummy aplikasi
+                    appBody.innerHTML = getAppMockupHTML(appName, data.message);
+
+                    // Mulai countdown
+                    sisaDetikGlobal = data.sisaDetik;
+                    timerBadge.textContent = formatTimer(sisaDetikGlobal);
+
+                    countdownInterval = setInterval(() => {
+                        sisaDetikGlobal--;
+                        if (sisaDetikGlobal <= 0) {
+                            clearInterval(countdownInterval);
+                            timerBadge.textContent = "00:00";
+                            phoneAppView.style.display = "none";
+                            phoneBlockScreen.style.display = "flex";
+                            phoneBlockMessage.textContent = "Batas waktu penggunaan untuk sesi ini telah habis.";
+                            
+                            // Ambil nama lengkap user dari tag profile
+                            const userFullName = document.querySelector(".user-info-name").textContent;
+                            
+                            // Kirim notifikasi ke backend
+                            fetch(`/api/my-apps/over-limit?appName=${appName}`, { method: 'POST' })
+                                .then(() => {
+                                    // Refresh notifikasi lonceng
+                                    loadNotifications();
+                                    
+                                    // Buka dropdown notifikasi secara otomatis agar langsung terlihat oleh user
+                                    const notifDropdown = document.getElementById("notifDropdown");
+                                    if (notifDropdown) {
+                                        notifDropdown.classList.add("open");
+                                    }
+                                });
+                            
+                            // Tampilkan alert
+                            alert(`Halo ${userFullName}, batas waktu untuk aplikasi ${appName} sudah habis!`);
+                        } else {
+                            timerBadge.textContent = formatTimer(sisaDetikGlobal);
+                        }
+                    }, 1000);
+                });
+        }
+
+        function closeApp() {
+            if (countdownInterval) clearInterval(countdownInterval);
+            document.getElementById("phoneHome").style.display = "flex";
+            document.getElementById("phoneAppView").style.display = "none";
+            document.getElementById("phoneBlockScreen").style.display = "none";
+            activeAppName = "";
+        }
+
+        function getAppMockupHTML(appName, infoMsg) {
+            let infoNote = infoMsg ? `<div class="mockup-info-badge">${infoMsg}</div>` : '';
+            if (appName === "TikTok") {
+                return `
+                    <div class="mockup-tiktok">
+                        <div class="mockup-header-app">🎵 TikTok</div>
+                        ${infoNote}
+                        <div class="mockup-video">
+                            <span class="music-icon">🎶</span>
+                            <div class="mockup-text-overlay">
+                                <strong>@mindfull_life</strong>
+                                <p>Ingatlah untuk beristirahat sejenak! Keseimbangan adalah kunci utama kesehatan mental. #DigitalWellness</p>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            } else if (appName === "Instagram") {
+                return `
+                    <div class="mockup-instagram">
+                        <div class="mockup-header-app">📸 Instagram</div>
+                        ${infoNote}
+                        <div class="mockup-feed-item">
+                            <div class="feed-user">
+                                <div class="feed-avatar">💡</div>
+                                <span>mentalhealth_tips</span>
+                            </div>
+                            <div class="feed-image">🧠</div>
+                            <div class="feed-footer">
+                                <strong>1,200 likes</strong>
+                                <p><strong>mentalhealth_tips</strong> Jangan biarkan layar ponsel menjauhkanmu dari dunia nyata. Lakukan digital detox setidaknya 30 menit sehari!</p>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            } else if (appName === "YouTube") {
+                return `
+                    <div class="mockup-youtube">
+                        <div class="mockup-header-app">▶️ YouTube</div>
+                        ${infoNote}
+                        <div class="mockup-video-player">
+                            <div class="play-btn">▶️</div>
+                        </div>
+                        <div class="video-info">
+                            <div class="video-title">10 Menit Meditasi Harian untuk Mengurangi Kecemasan & Stress</div>
+                            <div class="video-channel">MindFull Channel • 1.2M views</div>
+                        </div>
+                    </div>
+                `;
+            } else if (appName === "WhatsApp") {
+                return `
+                    <div class="mockup-whatsapp">
+                        <div class="mockup-header-app">💬 WhatsApp</div>
+                        ${infoNote}
+                        <div class="chats-list">
+                            <div class="chat-item">
+                                <div class="chat-avatar">👩</div>
+                                <div class="chat-details">
+                                    <strong>Ibu</strong>
+                                    <p>Jangan lupa makan siang ya nak, istirahatkan matamu dari HP.</p>
+                                </div>
+                            </div>
+                            <div class="chat-item">
+                                <div class="chat-avatar">👨</div>
+                                <div class="chat-details">
+                                    <strong>Budi Teman</strong>
+                                    <p>Bro, nanti sore main sepak bola yuk jam 16:30 biar segar.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            } else {
+                return `
+                    <div class="mockup-generic">
+                        <div class="mockup-header-app">${appName}</div>
+                        ${infoNote}
+                        <div class="generic-content" style="padding: 30px 20px; text-align: center;">
+                            <div style="font-size: 48px; margin-bottom: 16px;">📱</div>
+                            <h3>Selamat Datang di ${appName} Dummy</h3>
+                            <p style="font-size: 12px; color: var(--text-3); margin-top: 10px; line-height: 1.5;">
+                                Aplikasi ini disajikan secara terbatas untuk mendemonstrasikan sistem monitoring waktu layar secara realtime.
+                            </p>
+                        </div>
+                    </div>
+                `;
+            }
+        }
+    </script>
+
+    <!-- NOTIFICATION DROPDOWN SCRIPT -->
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            const notifBellBtn = document.getElementById("notifBellBtn");
+            const notifDropdown = document.getElementById("notifDropdown");
+            const notifCount = document.getElementById("notifCount");
+            const notifList = document.getElementById("notifList");
+            const notifMarkAllBtn = document.getElementById("notifMarkAllBtn");
+
+            notifBellBtn.addEventListener("click", function(e) {
+                e.stopPropagation();
+                notifDropdown.classList.toggle("open");
+            });
+
+            document.addEventListener("click", function(e) {
+                if (!notifDropdown.contains(e.target) && e.target !== notifBellBtn) {
+                    notifDropdown.classList.remove("open");
+                }
+            });
+
+            function loadNotifications() {
+                fetch('/api/notifications')
+                    .then(response => response.json())
+                    .then(data => {
+                        const count = data.unreadCount;
+                        if (count > 0) {
+                            notifCount.textContent = count;
+                            notifCount.style.display = "flex";
+                        } else {
+                            notifCount.style.display = "none";
+                        }
+
+                        const list = data.notifications;
+                        notifList.innerHTML = "";
+
+                        if (list.length === 0) {
+                            notifList.innerHTML = '<div class="notif-empty">Tidak ada notifikasi</div>';
+                            return;
+                        }
+
+                        list.forEach(notif => {
+                            const isUnread = !notif.read;
+                            const item = document.createElement("div");
+                            item.className = `notif-item ${isUnread ? 'unread' : ''}`;
+                            
+                            let icon = "ℹ️";
+                            if (notif.tipe === "SUCCESS") icon = "✅";
+                            if (notif.tipe === "WARNING") icon = "⚠️";
+                            if (notif.tipe === "DANGER") icon = "❌";
+
+                            item.innerHTML = `
+                                <div class="notif-icon ${notif.tipe}">${icon}</div>
+                                <div class="notif-body">
+                                    <div class="notif-title">${notif.judul}</div>
+                                    <div class="notif-text">${notif.pesan}</div>
+                                    <div class="notif-actions">
+                                        ${isUnread ? `<button class="notif-action-btn read" data-id="${notif.id}">Tandai dibaca</button>` : ''}
+                                        <button class="notif-action-btn delete" data-id="${notif.id}">Hapus</button>
+                                    </div>
+                                </div>
+                            `;
+                            
+                            item.querySelectorAll(".notif-action-btn.read").forEach(btn => {
+                                btn.addEventListener("click", function(e) {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    const id = btn.getAttribute("data-id");
+                                    fetch(`/api/notifications/${id}/read`, { method: 'POST' })
+                                        .then(() => loadNotifications());
+                                });
+                            });
+
+                            item.querySelectorAll(".notif-action-btn.delete").forEach(btn => {
+                                btn.addEventListener("click", function(e) {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    const id = btn.getAttribute("data-id");
+                                    fetch(`/api/notifications/${id}`, { method: 'DELETE' })
+                                        .then(() => loadNotifications());
+                                });
+                            });
+
+                            notifList.appendChild(item);
+                        });
+                    });
+            }
+
+            notifMarkAllBtn.addEventListener("click", function(e) {
+                e.preventDefault();
+                fetch('/api/notifications/read-all', { method: 'POST' })
+                    .then(() => loadNotifications());
+            });
+
+            loadNotifications();
+            setInterval(loadNotifications, 30000);
+        });
+    </script>
+</body>
+</html>

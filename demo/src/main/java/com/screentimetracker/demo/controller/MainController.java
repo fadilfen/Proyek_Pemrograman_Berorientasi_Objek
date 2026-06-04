@@ -141,13 +141,13 @@ public class MainController {
             parsedJamMulai = java.time.LocalTime.now();
         }
 
-        boolean berhasil = service.tambahAktivitas(
+        String errorMessage = service.tambahAktivitas(
                 getUserId(session), namaAplikasi, durasiMenit, parsedJamMulai, tanggal);
 
-        if (berhasil) {
+        if (errorMessage == null) {
             ra.addFlashAttribute("success", "Aktivitas berhasil ditambahkan!");
         } else {
-            ra.addFlashAttribute("error", "Token tidak cukup! Minimal 5 token untuk log aktivitas.");
+            ra.addFlashAttribute("error", errorMessage);
         }
         return "redirect:/activity";
     }

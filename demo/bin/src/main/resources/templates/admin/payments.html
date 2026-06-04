@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="id">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Verify Payments – MindFull</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com"/>
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous"/>
+    <link rel="stylesheet" href="../../static/style.css" th:href="@{/style.css}"/>
+</head>
+<body>
+
+    <!-- NAVBAR -->
+    <header class="navbar">
+        <div class="navbar-container">
+            <div class="navbar-left">
+                <a th:href="@{/admin/dashboard}" class="navbar-logo">
+                    <span class="navbar-logo-icon">🛡️</span>
+                    <span>MindFull Admin</span>
+                </a>
+                <ul class="navbar-menu">
+                    <li><a th:href="@{/admin/dashboard}" class="navbar-link" id="nav-admin-dashboard">Dashboard</a></li>
+                    <li><a th:href="@{/admin/users}" class="navbar-link" id="nav-admin-users">Users</a></li>
+                    <li><a th:href="@{/admin/payments}" class="navbar-link active" id="nav-admin-payments">Payments</a></li>
+                    <li><a th:href="@{/dashboard}" class="navbar-link">Switch to User View</a></li>
+                </ul>
+            </div>
+            <div class="navbar-right">
+                <!-- Profile Info -->
+                <div class="user-tag">
+                    <div class="navbar-avatar" th:text="${#strings.substring(session.username != null ? session.username : 'A', 0, 1)}">A</div>
+                    <div class="user-info-text">
+                        <span class="user-info-name" th:text="${session.namaUser}">Admin</span>
+                        <span class="user-info-role" th:text="${session.role}">ADMIN</span>
+                    </div>
+                    <a th:href="@{/logout}" class="btn btn-outline btn-sm" style="margin-left: 10px;">Logout</a>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="main-content">
+        <!-- Header halaman -->
+        <div class="page-header">
+            <div class="page-header-text">
+                <h1 class="page-judul">Payment Verification</h1>
+                <p class="page-sub">Verifikasi pengajuan top up koin secara manual untuk memberikan token kepada pengguna.</p>
+            </div>
+        </div>
+
+        <!-- Pesan sukses atau error -->
+        <div th:if="${success}" class="alert alert-success">
+            <span th:text="${success}">Berhasil!</span>
+        </div>
+        <div th:if="${error}" class="alert alert-error">
+            <span th:text="${error}">Gagal!</span>
+        </div>
+
+        <!-- Filter Status Transaksi -->
+        <div class="filter-row" style="background: transparent; padding: 0; border: none; margin-bottom: 24px;">
+            <form th:action="@{/admin/payments}" method="get" style="display: flex; gap: 12px; align-items: flex-end;">
+                <div class="filter-group">
+                    <span class="filter-label">Filter Status</span>
+                    <select name="status" class="filter-input" style="padding: 7px 12px;">
+                        <option value="" th:selected="${statusFilter == null || statusFilter == ''}">Semua Transaksi</option>
+                        <option value="PENDING" th:selected="${statusFilter == 'PENDING'}">PENDING (Menunggu)</option>
+                        <option value="VERIFIED" th:selected="${statusFilter == 'VERIFIED'}">VERIFIED (Berhasil)</option>
+                        <option value="REJECTED" th:selected="${statusFilter == 'REJECTED'}">REJECTED (Ditolak)</option>
+                    </select>
+                </div>
+                <button type="submit" class="btn btn-primary btn-sm">Terapkan</button>
+            </form>
+        </div>
+
+        <!-- Table Card -->
+        <div class="card">
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>ID Transaksi</th>
+                            <th>Pengguna</th>
+                            <th>Jumlah Token</th>
+                            <th>Total Nominal</th>
+                            <th>Metode</th>
+                            <th>Tanggal Diajukan</th>
+                            <th>Status</th>
+                            <th>Aksi Verifikasi</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:each="p : ${payments}">
+                            <td th:text="${'TX-' + p.id}">1</td>
+                            <td class="app-name" th:text="${p.user.namaUser} + ' (@' + ${p.user.username} + ')'">User</td>
+                            <td th:text="${p.jumlahToken} + ' Token'">50 Token</td>
+                            <td style="font-weight: 700; color: #a5b4fc;" th:text="'Rp ' + ${#numbers.formatDecimal(p.totalHarga, 0, 'POINT', 0, 'POINT')}">Rp 50.000</td>
+                            <td th:text="${p.metode}">QRIS</td>
+                            <td th:text="${#temporals.format(p.createdAt, 'dd MMM yyyy HH:mm')}">Tanggal</td>
+                            <td>
+                                <span class="badge" th:classappend="${p.status == 'VERIFIED' ? 'badge-success' : (p.status == 'PENDING' ? 'badge-warning' : 'badge-danger')}" th:text="${p.status}">PENDING</span>
+                            </td>
+                            <td>
+                                <div style="display: flex; gap: 8px;" th:if="${p.status == 'PENDING'}">
+                                    <!-- Verify -->
+                                    <form th:action="@{/admin/payments/verify}" method="post" style="margin: 0;">
+                                        <input type="hidden" name="paymentId" th:value="${p.id}"/>
+                                        <button type="submit" class="btn btn-success btn-sm">Terima ✅</button>
+                                    </form>
+                                    <!-- Reject -->
+                                    <form th:action="@{/admin/payments/reject}" method="post" style="margin: 0;">
+                                        <input type="hidden" name="paymentId" th:value="${p.id}"/>
+                                        <button type="submit" class="btn btn-danger btn-sm">Tolak ❌</button>
+                                    </form>
+                                </div>
+                                <div style="display: flex; gap: 8px;" th:if="${p.status != 'PENDING'}">
+                                    <!-- Delete Transaksi -->
+                                    <form th:action="@{/admin/payments/delete}" method="post" style="margin: 0;" onsubmit="return confirm('Apakah Anda yakin ingin menghapus data transaksi ini secara permanen?')">
+                                        <input type="hidden" name="paymentId" th:value="${p.id}"/>
+                                        <button type="submit" class="btn btn-outline btn-sm btn-danger" style="color: var(--danger);">Hapus Log</button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                        <tr th:if="${#lists.isEmpty(payments)}">
+                            <td colspan="8" class="empty-state">
+                                <div style="font-size: 32px; margin-bottom: 12px;">📭</div>
+                                Tidak ada data pengajuan pembayaran yang sesuai.<br/>
+                                <span style="color: var(--text-3);">Seluruh transaksi top up user akan muncul di sini.</span>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+
+</body>
+</html>

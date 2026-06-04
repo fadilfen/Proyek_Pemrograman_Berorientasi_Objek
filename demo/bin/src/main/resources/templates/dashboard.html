@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="id">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Dashboard – MindFull</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com"/>
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous"/>
+    <link rel="stylesheet" href="../static/style.css" th:href="@{/style.css}"/>
+</head>
+<body>
+
+    <!-- NAVBAR -->
+    <header class="navbar">
+        <div class="navbar-container">
+            <div class="navbar-left">
+                <a th:href="@{/dashboard}" class="navbar-logo">
+                    <span class="navbar-logo-icon">🧠</span>
+                    <span>MindFull</span>
+                </a>
+                <ul class="navbar-menu" th:if="${session.role != 'ADMIN'}">
+                    <li><a th:href="@{/dashboard}" class="navbar-link active" id="nav-home">Home</a></li>
+                    <li><a th:href="@{/activity}" class="navbar-link" id="nav-activity">Activities</a></li>
+                    <li><a th:href="@{/my-apps}" class="navbar-link" id="nav-myapps">My Apps</a></li>
+                    <li><a th:href="@{/report}" class="navbar-link" id="nav-report">Reports</a></li>
+                    <li><a th:href="@{/topup}" class="navbar-link" id="nav-topup">Top Up</a></li>
+                    <li><a th:href="@{/profile}" class="navbar-link" id="nav-profile">Profile</a></li>
+                </ul>
+                <ul class="navbar-menu" th:if="${session.role == 'ADMIN'}">
+                    <li><a th:href="@{/admin/dashboard}" class="navbar-link" id="nav-admin-dashboard">Admin Dashboard</a></li>
+                    <li><a th:href="@{/admin/users}" class="navbar-link" id="nav-admin-users">Users</a></li>
+                    <li><a th:href="@{/admin/payments}" class="navbar-link" id="nav-admin-payments">Payments</a></li>
+                    <li><a th:href="@{/dashboard}" class="navbar-link">Switch to User View</a></li>
+                </ul>
+            </div>
+            <div class="navbar-right">
+                <!-- Notification Bell -->
+                <div class="notif-container" id="notifContainer">
+                    <button class="notif-bell" id="notifBellBtn">
+                        🔔
+                        <span class="notif-badge" id="notifCount" style="display: none;">0</span>
+                    </button>
+                    <div class="notif-dropdown" id="notifDropdown">
+                        <div class="notif-header">
+                            <span class="notif-header-title">Notifikasi</span>
+                            <button class="notif-btn-clear" id="notifMarkAllBtn">Tandai semua dibaca</button>
+                        </div>
+                        <div class="notif-list" id="notifList">
+                            <div class="notif-empty">Tidak ada notifikasi</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Profile Info -->
+                <div class="user-tag">
+                    <div class="navbar-avatar" th:text="${#strings.substring(session.username != null ? session.username : 'U', 0, 1)}">U</div>
+                    <div class="user-info-text">
+                        <span class="user-info-name" th:text="${session.namaUser}">User</span>
+                        <span class="user-info-role" th:text="${session.role}">USER</span>
+                    </div>
+                    <a th:href="@{/logout}" class="btn btn-outline btn-sm" style="margin-left: 10px;">Logout</a>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="main-content">
+        <!-- Header halaman -->
+        <div class="page-header">
+            <div class="page-header-text">
+                <h1 class="page-judul" th:text="'Selamat Datang, ' + ${session.namaUser} + '! 👋'">Halo!</h1>
+                <p class="page-sub">Pantau aktivitas digital Anda untuk kesehatan mental yang lebih baik.</p>
+            </div>
+            <span class="badge badge-indigo" th:text="${#temporals.format(today, 'EEEE, dd MMMM yyyy')}">Tanggal</span>
+        </div>
+
+        <!-- Notification Alerts from controllers -->
+        <div th:if="${success}" class="alert alert-success">
+            <span th:text="${success}">Berhasil!</span>
+        </div>
+        <div th:if="${error}" class="alert alert-error">
+            <span th:text="${error}">Gagal!</span>
+        </div>
+
+        <!-- stats grid -->
+        <div class="stats-grid">
+            <!-- Kartu Token -->
+            <div class="card stat-card card-indigo">
+                <div class="stat-top">
+                    <span class="stat-label">Token Balance</span>
+                    <div class="stat-badge badge-indigo">🪙</div>
+                </div>
+                <div class="stat-nilai indigo" th:text="${user.token}">50</div>
+                <div class="stat-sub">Sisa token untuk log aktivitas (min. 5)</div>
+                <div class="stat-progress">
+                    <div class="stat-progress-fill fill-indigo"
+                         th:style="'width: ' + ${T(java.lang.Math).min(user.token * 100 / 200, 100)} + '%'"></div>
+                </div>
+            </div>
+
+            <!-- Kartu Wellness Score -->
+            <div class="card stat-card card-green">
+                <div class="stat-top">
+                    <span class="stat-label">Wellness Score</span>
+                    <div class="stat-badge badge-green">💚</div>
+                </div>
+                <div class="stat-nilai green" th:text="${score}">100</div>
+                <div class="stat-sub" th:text="${score >= 70} ? 'Kondisi Mental Anda Sehat ✓' : 'Kondisi Mental Perlu Perhatian ⚠️'">Status</div>
+                <div class="stat-progress">
+                    <div class="stat-progress-fill fill-green"
+                         th:style="'width: ' + ${score} + '%'"></div>
+                </div>
+            </div>
+
+            <!-- Kartu Screen Time -->
+            <div class="card stat-card card-blue">
+                <div class="stat-top">
+                    <span class="stat-label">Screen Time Hari Ini</span>
+                    <div class="stat-badge badge-blue">⏱</div>
+                </div>
+                <div class="stat-nilai blue" th:text="${totalScreenTime} + ' min'">0 min</div>
+                <div class="stat-sub">Total akumulasi durasi layar</div>
+                <div class="stat-progress">
+                    <div class="stat-progress-fill fill-blue"
+                         th:style="'width: ' + ${T(java.lang.Math).min(totalScreenTime * 100 / 480, 100)} + '%'"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Score Ring + Quick Actions -->
+        <div class="two-col">
+            <!-- Health Overview -->
+            <div class="card">
+                <h3 class="card-title">Wellness Overview</h3>
+                <div class="score-ring-wrap">
+                    <div class="score-ring">
+                        <svg width="100" height="100" viewBox="0 0 100 100">
+                            <circle cx="50" cy="50" r="40" fill="none" stroke="rgba(255,255,255,0.03)" stroke-width="8"/>
+                            <circle cx="50" cy="50" r="40" fill="none" 
+                                    th:stroke="${score >= 80 ? '#10b981' : (score >= 50 ? '#f59e0b' : '#ef4444')}" 
+                                    stroke-width="8" stroke-linecap="round"
+                                    th:stroke-dasharray="${score * 2.513} + ' 251.3'" stroke-dashoffset="0"/>
+                        </svg>
+                        <div class="score-ring-text">
+                            <span class="score-ring-num" th:text="${score}">100</span>
+                            <span class="score-ring-sub">/100</span>
+                        </div>
+                    </div>
+                    <div class="score-ring-label" th:text="${score >= 80 ? 'Sangat Sehat' : (score >= 60 ? 'Sehat' : (score >= 40 ? 'Perlu Perhatian' : 'Kritis'))}">Status</div>
+                </div>
+                
+                <div style="margin-top: 24px; padding-top: 16px; border-top: 1px solid var(--border);">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                        <span style="font-size: 13px; color: var(--text-3);">Token Terpakai</span>
+                        <span style="font-size: 13px; font-weight: 700; color: #a5b4fc;" th:text="${user.token} + ' pts'">50 pts</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between;">
+                        <span style="font-size: 13px; color: var(--text-3);">Total Waktu Layar</span>
+                        <span style="font-size: 13px; font-weight: 700; color: var(--info);" th:text="${totalScreenTime} + ' menit'">0 min</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Actions -->
+            <div class="card">
+                <h3 class="card-title">Quick Actions</h3>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px;">
+                    <!-- Log Activity -->
+                    <a th:href="@{/activity}" class="pill-btn" style="padding: 20px; border-radius: var(--radius-md); display: flex; align-items: center; gap: 16px;">
+                        <div style="width: 44px; height: 44px; background: var(--primary-dim); border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 20px;">📊</div>
+                        <div>
+                            <div style="font-size: 14px; font-weight: 700; color: var(--text-1);">Catat Aktivitas</div>
+                            <div style="font-size: 11px; color: var(--text-3); margin-top: 2px;">Log durasi screen time</div>
+                        </div>
+                    </a>
+
+                    <!-- Top Up -->
+                    <a th:href="@{/topup}" class="pill-btn" style="padding: 20px; border-radius: var(--radius-md); display: flex; align-items: center; gap: 16px;">
+                        <div style="width: 44px; height: 44px; background: var(--success-dim); border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 20px;">🪙</div>
+                        <div>
+                            <div style="font-size: 14px; font-weight: 700; color: var(--text-1);">Isi Saldo Token</div>
+                            <div style="font-size: 11px; color: var(--text-3); margin-top: 2px;">Top up token balance</div>
+                        </div>
+                    </a>
+
+                    <!-- View Report -->
+                    <a th:href="@{/report}" class="pill-btn" style="padding: 20px; border-radius: var(--radius-md); display: flex; align-items: center; gap: 16px;">
+                        <div style="width: 44px; height: 44px; background: var(--info-dim); border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 20px;">📋</div>
+                        <div>
+                            <div style="font-size: 14px; font-weight: 700; color: var(--text-1);">Laporan Kesehatan</div>
+                            <div style="font-size: 11px; color: var(--text-3); margin-top: 2px;">Generate wellness report</div>
+                        </div>
+                    </a>
+
+                    <!-- Profile -->
+                    <a th:href="@{/profile}" class="pill-btn" style="padding: 20px; border-radius: var(--radius-md); display: flex; align-items: center; gap: 16px;">
+                        <div style="width: 44px; height: 44px; background: var(--warning-dim); border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 20px;">👤</div>
+                        <div>
+                            <div style="font-size: 14px; font-weight: 700; color: var(--text-1);">Pengaturan Akun</div>
+                            <div style="font-size: 11px; color: var(--text-3); margin-top: 2px;">Update profile & password</div>
+                        </div>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- NOTIFICATION SCRIPT -->
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            const notifBellBtn = document.getElementById("notifBellBtn");
+            const notifDropdown = document.getElementById("notifDropdown");
+            const notifCount = document.getElementById("notifCount");
+            const notifList = document.getElementById("notifList");
+            const notifMarkAllBtn = document.getElementById("notifMarkAllBtn");
+
+            notifBellBtn.addEventListener("click", function(e) {
+                e.stopPropagation();
+                notifDropdown.classList.toggle("open");
+            });
+
+            document.addEventListener("click", function(e) {
+                if (!notifDropdown.contains(e.target) && e.target !== notifBellBtn) {
+                    notifDropdown.classList.remove("open");
+                }
+            });
+
+            function loadNotifications() {
+                fetch('/api/notifications')
+                    .then(response => response.json())
+                    .then(data => {
+                        const count = data.unreadCount;
+                        if (count > 0) {
+                            notifCount.textContent = count;
+                            notifCount.style.display = "flex";
+                        } else {
+                            notifCount.style.display = "none";
+                        }
+
+                        const list = data.notifications;
+                        notifList.innerHTML = "";
+
+                        if (list.length === 0) {
+                            notifList.innerHTML = '<div class="notif-empty">Tidak ada notifikasi</div>';
+                            return;
+                        }
+
+                        list.forEach(notif => {
+                            const isUnread = !notif.read;
+                            const item = document.createElement("div");
+                            item.className = `notif-item ${isUnread ? 'unread' : ''}`;
+                            
+                            let icon = "ℹ️";
+                            if (notif.tipe === "SUCCESS") icon = "✅";
+                            if (notif.tipe === "WARNING") icon = "⚠️";
+                            if (notif.tipe === "DANGER") icon = "❌";
+
+                            item.innerHTML = `
+                                <div class="notif-icon ${notif.tipe}">${icon}</div>
+                                <div class="notif-body">
+                                    <div class="notif-title">${notif.judul}</div>
+                                    <div class="notif-text">${notif.pesan}</div>
+                                    <div class="notif-actions">
+                                        ${isUnread ? `<button class="notif-action-btn read" data-id="${notif.id}">Tandai dibaca</button>` : ''}
+                                        <button class="notif-action-btn delete" data-id="${notif.id}">Hapus</button>
+                                    </div>
+                                </div>
+                            `;
+                            
+                            item.querySelectorAll(".notif-action-btn.read").forEach(btn => {
+                                btn.addEventListener("click", function(e) {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    const id = btn.getAttribute("data-id");
+                                    fetch(`/api/notifications/${id}/read`, { method: 'POST' })
+                                        .then(() => loadNotifications());
+                                });
+                            });
+
+                            item.querySelectorAll(".notif-action-btn.delete").forEach(btn => {
+                                btn.addEventListener("click", function(e) {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    const id = btn.getAttribute("data-id");
+                                    fetch(`/api/notifications/${id}`, { method: 'DELETE' })
+                                        .then(() => loadNotifications());
+                                });
+                            });
+
+                            notifList.appendChild(item);
+                        });
+                    });
+            }
+
+            notifMarkAllBtn.addEventListener("click", function(e) {
+                e.preventDefault();
+                fetch('/api/notifications/read-all', { method: 'POST' })
+                    .then(() => loadNotifications());
+            });
+
+            loadNotifications();
+            setInterval(loadNotifications, 30000);
+        });
+    </script>
+</body>
+</html>

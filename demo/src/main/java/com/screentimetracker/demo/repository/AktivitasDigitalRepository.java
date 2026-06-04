@@ -50,6 +50,17 @@ public interface AktivitasDigitalRepository extends JpaRepository<AktivitasDigit
             @Param("endDate")   LocalDate endDate);
 
     /**
+     * Mengecek apakah sudah ada aktivitas untuk aplikasi tertentu pada tanggal yang sama.
+     * Digunakan untuk mencegah user memasukkan screen time dua kali untuk aplikasi yang sama dalam sehari.
+     *
+     * @param userId        ID pengguna
+     * @param namaAplikasi  Nama aplikasi (case-insensitive)
+     * @param tanggal       Tanggal aktivitas
+     * @return true jika sudah ada entri duplikat
+     */
+    boolean existsByUserIdAndNamaAplikasiIgnoreCaseAndTanggal(Long userId, String namaAplikasi, LocalDate tanggal);
+
+    /**
      * Menghitung jumlah aktivitas yang melebihi batas pada tanggal tertentu.
      */
     @Query("SELECT COUNT(a) FROM AktivitasDigital a " +
