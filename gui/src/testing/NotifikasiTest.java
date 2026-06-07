@@ -32,6 +32,7 @@ public class NotifikasiTest {
     public void testConstructor() {
         // Membuat instance notifikasi
         assertNotNull(notifikasi);
+        System.out.println("Skenario 1: Constructor Notifikasi - BERHASIL");
     }
 
     @Test
@@ -40,6 +41,7 @@ public class NotifikasiTest {
         // Screen time 100, limit 150 (masih aman)
         notifikasi.kirimPeringatan(100, 150);
         assertEquals("Screen time masih dalam batas yang ditentukan.", notifikasi.getPesan());
+        System.out.println("Skenario 2: Peringatan di bawah limit - BERHASIL");
     }
 
     @Test
@@ -48,6 +50,7 @@ public class NotifikasiTest {
         // Screen time 120 = limit 120
         notifikasi.kirimPeringatan(120, 120);
         assertEquals("Anda sudah mencapai batas screen time hari ini.", notifikasi.getPesan());
+        System.out.println("Skenario 3: Peringatan sama dengan limit - BERHASIL");
     }
 
     @Test
@@ -56,6 +59,7 @@ public class NotifikasiTest {
         // Screen time 200 melebihi limit 150
         notifikasi.kirimPeringatan(200, 150);
         assertEquals("Anda sudah melebihi batas screen time!", notifikasi.getPesan());
+        System.out.println("Skenario 4: Peringatan melebihi limit - BERHASIL");
     }
 
     @Test
@@ -63,6 +67,7 @@ public class NotifikasiTest {
     public void testGetPesanSebelumKirim() {
         // Pesan masih null sebelum kirimPeringatan
         assertNull(notifikasi.getPesan());
+        System.out.println("Skenario 5: getPesan() null sebelum kirim - BERHASIL");
     }
 
     @Test
@@ -71,6 +76,7 @@ public class NotifikasiTest {
         // Mengubah pesan secara manual
         notifikasi.setPesan("Pesan custom");
         assertEquals("Pesan custom", notifikasi.getPesan());
+        System.out.println("Skenario 6: setPesan() mengubah pesan - BERHASIL");
     }
 
     @Test
@@ -80,6 +86,7 @@ public class NotifikasiTest {
         notifikasi.kirimPeringatan(100, 120);
         String output = outputStream.toString();
         assertTrue(output.contains("Notifikasi:"));
+        System.out.println("Skenario 7: Output ke console - BERHASIL");
     }
 
     @Test
@@ -88,6 +95,7 @@ public class NotifikasiTest {
         // Test edge case screen time 0
         notifikasi.kirimPeringatan(0, 100);
         assertEquals("Screen time masih dalam batas yang ditentukan.", notifikasi.getPesan());
+        System.out.println("Skenario 8: Screen time 0 dalam batas - BERHASIL");
     }
 
     @Test
@@ -96,6 +104,7 @@ public class NotifikasiTest {
         // Test dengan nilai ekstrem
         notifikasi.kirimPeringatan(1000, 100);
         assertEquals("Anda sudah melebihi batas screen time!", notifikasi.getPesan());
+        System.out.println("Skenario 9: Screen time sangat besar - BERHASIL");
     }
 
     @Test
@@ -104,6 +113,7 @@ public class NotifikasiTest {
         // Test boundary kedua nilai 0
         notifikasi.kirimPeringatan(0, 0);
         assertEquals("Anda sudah mencapai batas screen time hari ini.", notifikasi.getPesan());
+        System.out.println("Skenario 10: Limit dan screen time 0 - BERHASIL");
     }
 
     @Test
@@ -112,6 +122,7 @@ public class NotifikasiTest {
         // Test boundary 1 vs 0
         notifikasi.kirimPeringatan(1, 0);
         assertEquals("Anda sudah melebihi batas screen time!", notifikasi.getPesan());
+        System.out.println("Skenario 11: Screen time 1 melebihi limit 0 - BERHASIL");
     }
 
     @Test
@@ -125,6 +136,7 @@ public class NotifikasiTest {
         String pesan2 = notifikasi.getPesan();
         
         assertNotEquals(pesan1, pesan2);
+        System.out.println("Skenario 12: Multiple calls update pesan - BERHASIL");
     }
 
     @Test
@@ -133,6 +145,7 @@ public class NotifikasiTest {
         // Test boundary limit-1
         notifikasi.kirimPeringatan(119, 120);
         assertEquals("Screen time masih dalam batas yang ditentukan.", notifikasi.getPesan());
+        System.out.println("Skenario 13: Screen time 1 di bawah limit - BERHASIL");
     }
 
     @Test
@@ -141,6 +154,7 @@ public class NotifikasiTest {
         // Test boundary limit+1
         notifikasi.kirimPeringatan(121, 120);
         assertEquals("Anda sudah melebihi batas screen time!", notifikasi.getPesan());
+        System.out.println("Skenario 14: Screen time 1 di atas limit - BERHASIL");
     }
 
     @Test
@@ -149,5 +163,6 @@ public class NotifikasiTest {
         // Test dengan string kosong
         notifikasi.setPesan("");
         assertEquals("", notifikasi.getPesan());
+        System.out.println("Skenario 15: setPesan() string kosong - BERHASIL");
     }
 }

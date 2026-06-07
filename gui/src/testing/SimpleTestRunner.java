@@ -39,8 +39,8 @@ public class SimpleTestRunner {
         System.out.println("  Test Summary");
         System.out.println("========================================");
         System.out.println("Total Tests  : " + totalTests);
-        System.out.println("Passed       : " + passedTests + " ✓");
-        System.out.println("Failed       : " + failedTests + " ✗");
+        System.out.println("Passed       : " + passedTests + " Passed");
+        System.out.println("Failed       : " + failedTests + " Failed");
         System.out.println("Success Rate : " + (passedTests * 100 / totalTests) + "%");
         System.out.println("========================================");
     }
@@ -179,14 +179,14 @@ public class SimpleTestRunner {
             boolean result = testCase.run();
             if (result) {
                 passedTests++;
-                System.out.println("  ✓ " + testName);
+                System.out.println("Skenario " + totalTests + ": " + testName + " - BERHASIL");
             } else {
                 failedTests++;
-                System.out.println("  ✗ " + testName + " - Assertion failed");
+                System.out.println("Skenario " + totalTests + ": " + testName + " - GAGAL Failed");
             }
         } catch (Exception e) {
             failedTests++;
-            System.out.println("  ✗ " + testName + " - Exception: " + e.getMessage());
+            System.out.println("Skenario " + totalTests + ": " + testName + " - GAGAL Failed (Exception: " + e.getMessage() + ")");
         }
     }
 
