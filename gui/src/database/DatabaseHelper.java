@@ -18,8 +18,7 @@ import java.sql.SQLException;
 public class DatabaseHelper {
 
     // ── Konfigurasi koneksi MySQL ─────────────────────────────────────────
-    private static final String JDBC_URL  =
-            "jdbc:mysql://localhost:3306/mindfull_db" +
+    private static final String JDBC_URL = "jdbc:mysql://localhost:3307/mindfull_db" +
             "?useSSL=false" +
             "&serverTimezone=Asia/Jakarta" +
             "&allowPublicKeyRetrieval=true" +
@@ -28,7 +27,7 @@ public class DatabaseHelper {
             "&characterEncoding=UTF-8" +
             "&connectTimeout=3000" +
             "&socketTimeout=10000";
-    private static final String DB_USER     = "root";
+    private static final String DB_USER = "root";
     private static final String DB_PASSWORD = ""; // kosong = default Laragon
 
     // Satu instance koneksi yang digunakan sepanjang sesi (singleton)
@@ -55,8 +54,9 @@ public class DatabaseHelper {
             return connection;
         } catch (ClassNotFoundException e) {
             throw new SQLException(
-                "Driver MySQL tidak ditemukan. " +
-                "Pastikan mysql-connector-j.jar ada di classpath.", e);
+                    "Driver MySQL tidak ditemukan. " +
+                            "Pastikan mysql-connector-j.jar ada di classpath.",
+                    e);
         }
     }
 
@@ -72,15 +72,16 @@ public class DatabaseHelper {
                 connection.createStatement().execute("ALTER TABLE app_timers ADD COLUMN tanggal DATE");
                 System.out.println("[DB] Kolom tanggal berhasil ditambahkan ke app_timers");
             }
-            
+
             // Cek app_timers: tambah kolom remaining_seconds
             String checkSqlRem = "SELECT * FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = 'mindfull_db' AND TABLE_NAME = 'app_timers' AND COLUMN_NAME = 'remaining_seconds'";
             ResultSet rsRem = connection.createStatement().executeQuery(checkSqlRem);
             if (!rsRem.next()) {
-                connection.createStatement().execute("ALTER TABLE app_timers ADD COLUMN remaining_seconds BIGINT DEFAULT NULL");
+                connection.createStatement()
+                        .execute("ALTER TABLE app_timers ADD COLUMN remaining_seconds BIGINT DEFAULT NULL");
                 System.out.println("[DB] Kolom remaining_seconds berhasil ditambahkan ke app_timers");
             }
-            
+
             // Cek users: tambah kolom umur
             String checkSql2 = "SELECT * FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = 'mindfull_db' AND TABLE_NAME = 'users' AND COLUMN_NAME = 'umur'";
             ResultSet rs2 = connection.createStatement().executeQuery(checkSql2);
@@ -119,15 +120,15 @@ public class DatabaseHelper {
         ps.setString(2, password);
         return ps.executeQuery();
     }
-    
+
     /**
      * Menambahkan app timer untuk child
      */
-    public static void tambahAppTimer(long childId, String appName, int durationMinutes, 
-                                      java.time.LocalDate tanggal, java.time.LocalTime startTime, java.time.LocalTime endTime) 
+    public static void tambahAppTimer(long childId, String appName, int durationMinutes,
+            java.time.LocalDate tanggal, java.time.LocalTime startTime, java.time.LocalTime endTime)
             throws SQLException {
         String sql = "INSERT INTO app_timers (child_id, app_name, duration_minutes, tanggal, start_time, end_time, is_tracking, remaining_seconds) "
-                   + "VALUES (?, ?, ?, ?, ?, ?, 1, ?)";
+                + "VALUES (?, ?, ?, ?, ?, ?, 1, ?)";
         try (PreparedStatement ps = getConnection().prepareStatement(sql)) {
             ps.setLong(1, childId);
             ps.setString(2, appName);
@@ -139,7 +140,7 @@ public class DatabaseHelper {
             ps.executeUpdate();
         }
     }
-    
+
     /**
      * Update status tracking app timer
      */
@@ -151,7 +152,7 @@ public class DatabaseHelper {
             ps.executeUpdate();
         }
     }
-    
+
     /**
      * Update sisa waktu detik aplikasi
      */
@@ -163,7 +164,7 @@ public class DatabaseHelper {
             ps.executeUpdate();
         }
     }
-    
+
     /**
      * Update semua app timers untuk child menjadi tracking
      */
@@ -174,7 +175,7 @@ public class DatabaseHelper {
             ps.executeUpdate();
         }
     }
-    
+
     /**
      * Hapus app timer
      */
@@ -205,7 +206,8 @@ public class DatabaseHelper {
      */
     public static boolean daftarUser(String namaUser, String username, String password)
             throws SQLException {
-        if (usernameAda(username)) return false;
+        if (usernameAda(username))
+            return false;
         String sql = "INSERT INTO users (nama_user, username, password, token, role, parent_id) VALUES (?,?,?,50,'parent',NULL)";
         try (PreparedStatement ps = getConnection().prepareStatement(sql)) {
             ps.setString(1, namaUser);
@@ -215,14 +217,16 @@ public class DatabaseHelper {
             return true;
         }
     }
-    
+
     /**
      * Mendaftarkan child account oleh parent
+     * 
      * @param parentId id parent yang membuat child
      */
     public static boolean daftarChildUser(long parentId, String namaUser, String username, String password, int umur)
             throws SQLException {
-        if (usernameAda(username)) return false;
+        if (usernameAda(username))
+            return false;
         String sql = "INSERT INTO users (nama_user, username, password, token, role, parent_id, umur) VALUES (?,?,?,0,'child',?,?)";
         try (PreparedStatement ps = getConnection().prepareStatement(sql)) {
             ps.setString(1, namaUser);
@@ -259,7 +263,8 @@ public class DatabaseHelper {
         try (PreparedStatement ps = getConnection().prepareStatement(cek)) {
             ps.setString(1, usernameBar);
             ps.setLong(2, userId);
-            if (ps.executeQuery().next()) return false;
+            if (ps.executeQuery().next())
+                return false;
         }
         String sql = "UPDATE users SET username = ?, password = ? WHERE id = ?";
         try (PreparedStatement ps = getConnection().prepareStatement(sql)) {

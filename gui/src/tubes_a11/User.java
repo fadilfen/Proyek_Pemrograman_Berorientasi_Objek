@@ -23,6 +23,7 @@ public class User {
 
     // ── Daftar aktivitas di-load dari tabel 'aktivitas_digital' ──────────
     private ArrayList<AktivitasDigital> aktivitasList = new ArrayList<>();
+    private boolean isAktivitasLoaded = false; // flag lazy load agar tidak hit DB berulang
     
     // ── Daftar child accounts (hanya untuk parent) ────────────────────────
     private ArrayList<User> childAccounts = new ArrayList<>();
@@ -98,7 +99,7 @@ public class User {
 
     /**
      * Menambahkan aktivitas baru ke database dan list lokal.
-     * Token dikurangi 5 setiap kali log aktivitas.
+     * Catatan: pengurangan token dilakukan secara terpisah oleh pemanggil (showActivityPage).
      *
      * @param akt objek AktivitasDigital yang akan disimpan
      */
@@ -309,7 +310,10 @@ public class User {
     public boolean isChild()                    { return "child".equals(role); }
     
     public ArrayList<AktivitasDigital> getAktivitasList() { 
-        if (aktivitasList.isEmpty()) memuatAktivitasDariDB();
+        if (!isAktivitasLoaded) {
+            memuatAktivitasDariDB();
+            isAktivitasLoaded = true;
+        }
         return aktivitasList; 
     }
     
@@ -326,6 +330,13 @@ public class User {
     public void refreshChildAccounts() { 
         childAccounts.clear();
         loadChildAccounts(); 
+    }
+    
+    public void refreshAktivitas() {
+        isAktivitasLoaded = false;
+        aktivitasList.clear();
+        memuatAktivitasDariDB();
+        isAktivitasLoaded = true;
     }
     
     public void refreshAppTimers() { 
