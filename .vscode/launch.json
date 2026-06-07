@@ -1,0 +1,25 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "java",
+            "name": "Main",
+            "request": "launch",
+            "mainClass": "Main",
+            "projectName": "oop_a11"
+        },
+        {
+            "type": "java",
+            "name": "Run MindFull App",
+            "request": "launch",
+            "mainClass": "tubes_a11.Main",
+            "projectName": "oop_a11",
+            "cwd": "${workspaceFolder}/gui",
+            "classPaths": [
+                "${workspaceFolder}/gui/bin",
+                "${workspaceFolder}/gui/lib/mysql-connector.jar"
+            ],
+            "console": "integratedTerminal"
+        }
+    ]
+}

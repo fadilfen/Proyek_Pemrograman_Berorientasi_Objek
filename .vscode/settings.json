@@ -1,0 +1,10 @@
+{
+    "java.project.sourcePaths": [
+        "gui/src"
+    ],
+    "java.project.outputPath": "gui/bin",
+    "java.project.referencedLibraries": [
+        "gui/lib/**/*.jar"
+    ],
+    "java.configuration.updateBuildConfiguration": "automatic"
+}

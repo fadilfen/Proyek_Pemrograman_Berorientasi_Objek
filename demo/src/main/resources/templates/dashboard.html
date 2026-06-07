@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="id">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Dashboard – MindFull</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com"/>
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous"/>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+    <link rel="stylesheet" th:href="@{/style.css}"/>
+</head>
+<body>
+
+    <!-- ══════════════════════════════════════════════════════
+         SIDEBAR NAVIGASI
+         ══════════════════════════════════════════════════════ -->
+    <aside class="sidebar">
+
+        <!-- Logo aplikasi -->
+        <div class="sidebar-logo">
+            <div class="sidebar-logo-icon">🧠</div>
+            MindFull
+        </div>
+
+        <!-- Profil user yang sedang login -->
+        <div class="sidebar-profile">
+            <div class="avatar"
+                 th:text="${#strings.substring(session.namaUser, 0, 1)}">A</div>
+            <div>
+                <div class="profile-nama" th:text="${session.namaUser}">User</div>
+                <div class="profile-role">Member</div>
+            </div>
+        </div>
+
+        <!-- Label section navigasi -->
+        <div class="nav-section">Menu</div>
+
+        <!-- Item navigasi, 'active' pada halaman saat ini -->
+        <a th:href="@{/dashboard}" class="nav-item active">
+            <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+            Dashboard
+        </a>
+        <a th:href="@{/activity}" class="nav-item">
+            <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+            Activity Tracker
+        </a>
+        <a th:href="@{/topup}" class="nav-item">
+            <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+            Top Up Balance
+        </a>
+        <a th:href="@{/report}" class="nav-item">
+            <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+            Health Report
+        </a>
+        <a th:href="@{/profile}" class="nav-item">
+            <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            Profile
+        </a>
+
+        <!-- Tombol logout di bagian bawah sidebar -->
+        <div class="sidebar-footer">
+            <a th:href="@{/logout}" class="btn-logout">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+                Logout
+            </a>
+        </div>
+    </aside>
+
+    <!-- ══════════════════════════════════════════════════════
+         KONTEN UTAMA
+         ══════════════════════════════════════════════════════ -->
+    <main class="main">
+
+        <!-- Header halaman -->
+        <div class="page-header">
+            <div class="page-judul">Dashboard</div>
+            <div class="page-sub"
+                 th:text="${#temporals.format(today, 'EEEE, dd MMMM yyyy')}">Tanggal</div>
+        </div>
+
+        <!-- ── Baris 3 Stat Cards ── -->
+        <div class="stats-grid">
+
+            <!-- Kartu Token -->
+            <div class="stat-card card-indigo">
+                <div class="stat-top">
+                    <span class="stat-label">Token Balance</span>
+                    <div class="stat-badge badge-indigo">🪙</div>
+                </div>
+                <div class="stat-nilai indigo" th:text="${user.token}">50</div>
+                <div class="stat-sub">Available tokens</div>
+                <!-- Progress bar token (maks 200 untuk visualisasi) -->
+                <div class="stat-progress">
+                    <div class="stat-progress-fill fill-indigo"
+                         th:style="'width: ' + ${T(java.lang.Math).min(user.token * 100 / 200, 100)} + '%'"></div>
+                </div>
+            </div>
+
+            <!-- Kartu Wellness Score -->
+            <div class="stat-card card-green">
+                <div class="stat-top">
+                    <span class="stat-label">Wellness Score</span>
+                    <div class="stat-badge badge-green">💚</div>
+                </div>
+                <div class="stat-nilai green" th:text="${score}">100</div>
+                <div class="stat-sub"
+                     th:text="${score >= 70} ? 'Status: Sehat ✓' : 'Status: Perlu perhatian'">Status</div>
+                <!-- Progress bar skor kesehatan dari 0–100 -->
+                <div class="stat-progress">
+                    <div class="stat-progress-fill fill-green"
+                         th:style="'width: ' + ${score} + '%'"></div>
+                </div>
+            </div>
+
+            <!-- Kartu Screen Time -->
+            <div class="stat-card card-blue">
+                <div class="stat-top">
+                    <span class="stat-label">Screen Time</span>
+                    <div class="stat-badge badge-blue">⏱</div>
+                </div>
+                <div class="stat-nilai blue" th:text="${totalScreenTime} + ' min'">0 min</div>
+                <div class="stat-sub">Total semua aktivitas</div>
+                <!-- Progress bar screen time (maks 480 menit = 8 jam) -->
+                <div class="stat-progress">
+                    <div class="stat-progress-fill fill-blue"
+                         th:style="'width: ' + ${T(java.lang.Math).min(totalScreenTime * 100 / 480, 100)} + '%'"></div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- ── Baris Bawah: Score Ring + Quick Actions ── -->
+        <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 16px;">
+
+            <!-- Card visual wellness score ring -->
+            <div class="card">
+                <div class="card-title">Health Overview</div>
+
+                <!-- Ring SVG untuk visualisasi skor -->
+                <div class="score-ring-wrap">
+                    <div class="score-ring">
+                        <svg width="100" height="100" viewBox="0 0 100 100">
+                            <!-- Lingkaran background (track) -->
+                            <circle cx="50" cy="50" r="40"
+                                    fill="none"
+                                    stroke="rgba(255,255,255,0.06)"
+                                    stroke-width="8"/>
+                            <!-- Lingkaran progress, panjang stroke dihitung dari skor -->
+                            <circle cx="50" cy="50" r="40"
+                                    fill="none"
+                                    stroke="#22c55e"
+                                    stroke-width="8"
+                                    stroke-linecap="round"
+                                    th:stroke-dasharray="${score * 2.513} + ' 251.3'"
+                                    stroke-dashoffset="0"/>
+                        </svg>
+                        <!-- Angka skor di tengah ring -->
+                        <div class="score-ring-text">
+                            <span class="score-ring-num" th:text="${score}">100</span>
+                            <span class="score-ring-sub">/100</span>
+                        </div>
+                    </div>
+                    <div class="score-ring-label"
+                         th:text="${score >= 70} ? '😊 Kondisi Sehat' : '⚠️ Kurangi Screen Time'">Status</div>
+                </div>
+
+                <!-- Keterangan singkat -->
+                <div style="margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--border);">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                        <span style="font-size: 12px; color: var(--text-3);">Token</span>
+                        <span style="font-size: 12px; font-weight: 600; color: #a5b4fc;"
+                              th:text="${user.token} + ' pts'">50 pts</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between;">
+                        <span style="font-size: 12px; color: var(--text-3);">Screen Time</span>
+                        <span style="font-size: 12px; font-weight: 600; color: var(--info);"
+                              th:text="${totalScreenTime} + ' min'">0 min</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Card quick actions -->
+            <div class="card">
+                <div class="card-title">Quick Actions</div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+
+                    <!-- Tombol log aktivitas -->
+                    <a th:href="@{/activity}"
+                       style="display: flex; align-items: center; gap: 12px; padding: 16px;
+                              background: var(--primary-dim); border: 1px solid rgba(99,102,241,0.2);
+                              border-radius: 12px; text-decoration: none; transition: all 0.18s ease;"
+                       onmouseover="this.style.transform='translateY(-2px)'"
+                       onmouseout="this.style.transform='translateY(0)'">
+                        <div style="width: 38px; height: 38px; background: var(--primary);
+                                    border-radius: 10px; display: flex; align-items: center;
+                                    justify-content: center; font-size: 18px; flex-shrink: 0;">📊</div>
+                        <div>
+                            <div style="font-size: 13px; font-weight: 600; color: var(--text-1);">Log Activity</div>
+                            <div style="font-size: 11px; color: var(--text-3); margin-top: 2px;">Catat aktivitas baru</div>
+                        </div>
+                    </a>
+
+                    <!-- Tombol top up -->
+                    <a th:href="@{/topup}"
+                       style="display: flex; align-items: center; gap: 12px; padding: 16px;
+                              background: var(--success-dim); border: 1px solid rgba(34,197,94,0.2);
+                              border-radius: 12px; text-decoration: none; transition: all 0.18s ease;"
+                       onmouseover="this.style.transform='translateY(-2px)'"
+                       onmouseout="this.style.transform='translateY(0)'">
+                        <div style="width: 38px; height: 38px; background: var(--success);
+                                    border-radius: 10px; display: flex; align-items: center;
+                                    justify-content: center; font-size: 18px; flex-shrink: 0;">💳</div>
+                        <div>
+                            <div style="font-size: 13px; font-weight: 600; color: var(--text-1);">Top Up</div>
+                            <div style="font-size: 11px; color: var(--text-3); margin-top: 2px;">Tambah token</div>
+                        </div>
+                    </a>
+
+                    <!-- Tombol lihat laporan -->
+                    <a th:href="@{/report}"
+                       style="display: flex; align-items: center; gap: 12px; padding: 16px;
+                              background: var(--info-dim); border: 1px solid rgba(56,189,248,0.2);
+                              border-radius: 12px; text-decoration: none; transition: all 0.18s ease;"
+                       onmouseover="this.style.transform='translateY(-2px)'"
+                       onmouseout="this.style.transform='translateY(0)'">
+                        <div style="width: 38px; height: 38px; background: var(--info);
+                                    border-radius: 10px; display: flex; align-items: center;
+                                    justify-content: center; font-size: 18px; flex-shrink: 0; color: #0c1a2e;">📋</div>
+                        <div>
+                            <div style="font-size: 13px; font-weight: 600; color: var(--text-1);">View Report</div>
+                            <div style="font-size: 11px; color: var(--text-3); margin-top: 2px;">Laporan harian</div>
+                        </div>
+                    </a>
+
+                    <!-- Tombol profil -->
+                    <a th:href="@{/profile}"
+                       style="display: flex; align-items: center; gap: 12px; padding: 16px;
+                              background: var(--warning-dim); border: 1px solid rgba(245,158,11,0.2);
+                              border-radius: 12px; text-decoration: none; transition: all 0.18s ease;"
+                       onmouseover="this.style.transform='translateY(-2px)'"
+                       onmouseout="this.style.transform='translateY(0)'">
+                        <div style="width: 38px; height: 38px; background: var(--warning);
+                                    border-radius: 10px; display: flex; align-items: center;
+                                    justify-content: center; font-size: 18px; flex-shrink: 0; color: #0c1a2e;">👤</div>
+                        <div>
+                            <div style="font-size: 13px; font-weight: 600; color: var(--text-1);">Profile</div>
+                            <div style="font-size: 11px; color: var(--text-3); margin-top: 2px;">Kelola akun</div>
+                        </div>
+                    </a>
+
+                </div>
+            </div>
+
+        </div>
+
+    </main>
+
+</body>
+</html>
