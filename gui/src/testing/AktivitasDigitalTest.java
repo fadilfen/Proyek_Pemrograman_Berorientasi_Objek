@@ -20,7 +20,7 @@ public class AktivitasDigitalTest {
         assertEquals("Instagram", aktivitas.getNamaAplikasi());
         assertEquals(60, aktivitas.getDurasiMenit());
         assertEquals(120, aktivitas.getBatasDurasi());
-        System.out.println("Skenario 1: Constructor AktivitasDigital valid - BERHASIL");
+        System.out.println("Skenario 1: pencatatan aktivitas digital baru berhasil");
     }
 
     @Test
@@ -29,7 +29,7 @@ public class AktivitasDigitalTest {
         // Durasi 150 menit melebihi batas 120 menit
         AktivitasDigital aktivitas = new AktivitasDigital("TikTok", 150, 120, LocalDate.now());
         assertTrue(aktivitas.melebihiBatas());
-        System.out.println("Skenario 2: melebihiBatas() true saat melebihi - BERHASIL");
+        System.out.println("Skenario 2: deteksi screen time melebihi batas berhasil");
     }
 
     @Test
@@ -38,7 +38,7 @@ public class AktivitasDigitalTest {
         // Durasi 90 menit tidak melebihi batas 120 menit
         AktivitasDigital aktivitas = new AktivitasDigital("YouTube", 90, 120, LocalDate.now());
         assertFalse(aktivitas.melebihiBatas());
-        System.out.println("Skenario 3: melebihiBatas() false saat tidak melebihi - BERHASIL");
+        System.out.println("Skenario 3: deteksi screen time di bawah batas berhasil");
     }
 
     @Test
@@ -47,7 +47,7 @@ public class AktivitasDigitalTest {
         // Durasi 120 sama dengan batas 120
         AktivitasDigital aktivitas = new AktivitasDigital("Facebook", 120, 120, LocalDate.now());
         assertFalse(aktivitas.melebihiBatas());
-        System.out.println("Skenario 4: melebihiBatas() false saat sama - BERHASIL");
+        System.out.println("Skenario 4: deteksi screen time tepat pada batas berhasil");
     }
 
     @Test
@@ -56,7 +56,7 @@ public class AktivitasDigitalTest {
         // Memasukkan nama aplikasi WhatsApp
         AktivitasDigital aktivitas = new AktivitasDigital("WhatsApp", 30, 60, LocalDate.now());
         assertEquals("WhatsApp", aktivitas.getNamaAplikasi());
-        System.out.println("Skenario 5: getNamaAplikasi() benar - BERHASIL");
+        System.out.println("Skenario 5: mendapatkan nama aplikasi yang diakses berhasil");
     }
 
     @Test
@@ -65,7 +65,7 @@ public class AktivitasDigitalTest {
         // Memasukkan durasi 45 menit
         AktivitasDigital aktivitas = new AktivitasDigital("Twitter", 45, 60, LocalDate.now());
         assertEquals(45, aktivitas.getDurasiMenit());
-        System.out.println("Skenario 6: getDurasiMenit() benar - BERHASIL");
+        System.out.println("Skenario 6: mendapatkan durasi penggunaan aplikasi berhasil");
     }
 
     @Test
@@ -74,7 +74,7 @@ public class AktivitasDigitalTest {
         // Memasukkan batas durasi 150 menit
         AktivitasDigital aktivitas = new AktivitasDigital("Spotify", 100, 150, LocalDate.now());
         assertEquals(150, aktivitas.getBatasDurasi());
-        System.out.println("Skenario 7: getBatasDurasi() benar - BERHASIL");
+        System.out.println("Skenario 7: mendapatkan batas waktu aplikasi berhasil");
     }
 
     @Test
@@ -84,7 +84,7 @@ public class AktivitasDigitalTest {
         LocalDate today = LocalDate.now();
         AktivitasDigital aktivitas = new AktivitasDigital("Netflix", 120, 180, today);
         assertEquals(today, aktivitas.getTanggal());
-        System.out.println("Skenario 8: getTanggal() benar - BERHASIL");
+        System.out.println("Skenario 8: mendapatkan tanggal akses aplikasi berhasil");
     }
 
     @Test
@@ -94,7 +94,7 @@ public class AktivitasDigitalTest {
         AktivitasDigital aktivitas = new AktivitasDigital("Telegram", 0, 60, LocalDate.now());
         assertEquals(0, aktivitas.getDurasiMenit());
         assertFalse(aktivitas.melebihiBatas());
-        System.out.println("Skenario 9: Durasi 0 menit - BERHASIL");
+        System.out.println("Skenario 9: pengujian akses aplikasi durasi 0 menit berhasil");
     }
 
     @Test
@@ -103,7 +103,7 @@ public class AktivitasDigitalTest {
         // Test edge case batas dan durasi keduanya 0
         AktivitasDigital aktivitas = new AktivitasDigital("TestApp", 0, 0, LocalDate.now());
         assertFalse(aktivitas.melebihiBatas());
-        System.out.println("Skenario 10: Batas dan durasi 0 - BERHASIL");
+        System.out.println("Skenario 10: pengujian durasi dan batas 0 menit berhasil");
     }
 
     @Test
@@ -113,7 +113,7 @@ public class AktivitasDigitalTest {
         AktivitasDigital aktivitas = new AktivitasDigital("Gaming", 1000, 120, LocalDate.now());
         assertTrue(aktivitas.melebihiBatas());
         assertEquals(1000, aktivitas.getDurasiMenit());
-        System.out.println("Skenario 11: Durasi sangat besar - BERHASIL");
+        System.out.println("Skenario 11: pengujian akses aplikasi durasi ekstrim berhasil");
     }
 
     @Test
@@ -122,7 +122,7 @@ public class AktivitasDigitalTest {
         // Test edge case dengan nama aplikasi kosong
         AktivitasDigital aktivitas = new AktivitasDigital("", 60, 120, LocalDate.now());
         assertEquals("", aktivitas.getNamaAplikasi());
-        System.out.println("Skenario 12: Nama aplikasi kosong - BERHASIL");
+        System.out.println("Skenario 12: pengujian akses dengan nama aplikasi kosong berhasil");
     }
 
     @Test
@@ -132,7 +132,7 @@ public class AktivitasDigitalTest {
         LocalDate yesterday = LocalDate.now().minusDays(1);
         AktivitasDigital aktivitas = new AktivitasDigital("Reddit", 90, 120, yesterday);
         assertEquals(yesterday, aktivitas.getTanggal());
-        System.out.println("Skenario 13: Tanggal kemarin - BERHASIL");
+        System.out.println("Skenario 13: pencatatan aktivitas tanggal kemarin berhasil");
     }
 
     @Test
@@ -141,7 +141,7 @@ public class AktivitasDigitalTest {
         // Test boundary: 1 menit melebihi batas 0
         AktivitasDigital aktivitas = new AktivitasDigital("AppTest", 1, 0, LocalDate.now());
         assertTrue(aktivitas.melebihiBatas());
-        System.out.println("Skenario 14: Durasi 1 melebihi batas 0 - BERHASIL");
+        System.out.println("Skenario 14: pengujian durasi 1 menit dengan batas 0 berhasil");
     }
 
     @Test
@@ -154,6 +154,6 @@ public class AktivitasDigitalTest {
         assertFalse(akt1.melebihiBatas());
         assertTrue(akt2.melebihiBatas());
         assertNotEquals(akt1.getNamaAplikasi(), akt2.getNamaAplikasi());
-        System.out.println("Skenario 15: Multiple instances berbeda - BERHASIL");
+        System.out.println("Skenario 15: pengujian multi-aktivitas digital terpisah berhasil");
     }
 }

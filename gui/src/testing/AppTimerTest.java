@@ -20,7 +20,7 @@ public class AppTimerTest {
         assertNotNull(timer);
         assertEquals("Instagram", timer.getAppName());
         assertEquals(60, timer.getDurationMinutes());
-        System.out.println("Skenario 1: Constructor AppTimer valid - BERHASIL");
+        System.out.println("Skenario 1: pembuatan timer aplikasi berhasil");
     }
 
     @Test
@@ -29,7 +29,7 @@ public class AppTimerTest {
         // Timer 30 menit = 1800 detik
         AppTimer timer = new AppTimer(1, "TikTok", 30, LocalDate.now(), LocalTime.of(10, 0));
         assertEquals(1800, timer.getRemainingSeconds());
-        System.out.println("Skenario 2: getRemainingSeconds() awal - BERHASIL");
+        System.out.println("Skenario 2: mendapatkan sisa detik awal timer berhasil");
     }
 
     @Test
@@ -40,7 +40,7 @@ public class AppTimerTest {
         long initial = timer.getRemainingSeconds();
         timer.decrementRemainingSeconds();
         assertEquals(initial - 1, timer.getRemainingSeconds());
-        System.out.println("Skenario 3: decrementRemainingSeconds() - BERHASIL");
+        System.out.println("Skenario 3: pengurangan sisa waktu timer berhasil");
     }
 
     @Test
@@ -50,7 +50,7 @@ public class AppTimerTest {
         AppTimer timer = new AppTimer(1, "Facebook", 0, LocalDate.now(), LocalTime.of(10, 0));
         timer.decrementRemainingSeconds();
         assertEquals(0, timer.getRemainingSeconds());
-        System.out.println("Skenario 4: Decrement tidak negatif - BERHASIL");
+        System.out.println("Skenario 4: pencegahan sisa waktu bernilai negatif berhasil");
     }
 
     @Test
@@ -60,7 +60,7 @@ public class AppTimerTest {
         AppTimer timer = new AppTimer(1, "WhatsApp", 2, LocalDate.now(), LocalTime.of(10, 0));
         String timeStr = timer.getSimulatedRemainingTimeString();
         assertTrue(timeStr.contains("tersisa"));
-        System.out.println("Skenario 5: getSimulatedRemainingTimeString() - BERHASIL");
+        System.out.println("Skenario 5: mendapatkan format teks sisa waktu berhasil");
     }
 
     @Test
@@ -69,7 +69,7 @@ public class AppTimerTest {
         // Menampilkan pesan waktu habis
         AppTimer timer = new AppTimer(1, "Twitter", 0, LocalDate.now(), LocalTime.of(10, 0));
         assertEquals("Waktu habis", timer.getSimulatedRemainingTimeString());
-        System.out.println("Skenario 6: Waktu habis string - BERHASIL");
+        System.out.println("Skenario 6: mendapatkan teks pemberitahuan waktu habis berhasil");
     }
 
     @Test
@@ -78,7 +78,7 @@ public class AppTimerTest {
         // Waktu tersisa masih banyak (aman)
         AppTimer timer = new AppTimer(1, "Spotify", 60, LocalDate.now(), LocalTime.of(10, 0));
         assertTrue(timer.isSimulatedSafe());
-        System.out.println("Skenario 7: isSimulatedSafe() true - BERHASIL");
+        System.out.println("Skenario 7: deteksi status waktu aman (>20%) berhasil");
     }
 
     @Test
@@ -90,7 +90,7 @@ public class AppTimerTest {
             timer.decrementRemainingSeconds();
         }
         assertFalse(timer.isSimulatedSafe());
-        System.out.println("Skenario 8: isSimulatedSafe() false - BERHASIL");
+        System.out.println("Skenario 8: deteksi status waktu kritis (<20%) berhasil");
     }
 
     @Test
@@ -100,7 +100,7 @@ public class AppTimerTest {
         LocalTime startTime = LocalTime.of(14, 30);
         AppTimer timer = new AppTimer(1, "Gaming", 90, LocalDate.now(), startTime);
         assertEquals(startTime, timer.getStartTime());
-        System.out.println("Skenario 9: getStartTime() benar - BERHASIL");
+        System.out.println("Skenario 9: mendapatkan jam mulai akses berhasil");
     }
 
     @Test
@@ -111,7 +111,7 @@ public class AppTimerTest {
         AppTimer timer = new AppTimer(1, "Discord", 60, LocalDate.now(), startTime);
         LocalTime expectedEnd = LocalTime.of(11, 0);
         assertEquals(expectedEnd, timer.getEndTime());
-        System.out.println("Skenario 10: getEndTime() dihitung benar - BERHASIL");
+        System.out.println("Skenario 10: perhitungan jam selesai akses berhasil");
     }
 
     @Test
@@ -120,7 +120,7 @@ public class AppTimerTest {
         // Status tracking default adalah false
         AppTimer timer = new AppTimer(1, "Telegram", 30, LocalDate.now(), LocalTime.of(10, 0));
         assertFalse(timer.isTracking());
-        System.out.println("Skenario 11: isTracking() default false - BERHASIL");
+        System.out.println("Skenario 11: mendapatkan status default pelacakan berhasil");
     }
 
     @Test
@@ -130,7 +130,7 @@ public class AppTimerTest {
         AppTimer timer = new AppTimer(1, "Reddit", 45, LocalDate.now(), LocalTime.of(10, 0));
         timer.setTracking(true);
         assertTrue(timer.isTracking());
-        System.out.println("Skenario 12: setTracking() mengubah status - BERHASIL");
+        System.out.println("Skenario 12: pengaktifan status pelacakan berhasil");
     }
 
     @Test
@@ -139,7 +139,7 @@ public class AppTimerTest {
         // Format waktu 09:05 menjadi string
         AppTimer timer = new AppTimer(1, "Pinterest", 30, LocalDate.now(), LocalTime.of(9, 5));
         assertEquals("09:05", timer.getStartTimeString());
-        System.out.println("Skenario 13: getStartTimeString() format HH:mm - BERHASIL");
+        System.out.println("Skenario 13: mendapatkan format teks jam mulai berhasil");
     }
 
     @Test
@@ -148,7 +148,7 @@ public class AppTimerTest {
         // Start 09:30 + 30 menit = end 10:00
         AppTimer timer = new AppTimer(1, "Snapchat", 30, LocalDate.now(), LocalTime.of(9, 30));
         assertEquals("10:00", timer.getEndTimeString());
-        System.out.println("Skenario 14: getEndTimeString() format HH:mm - BERHASIL");
+        System.out.println("Skenario 14: mendapatkan format teks jam selesai berhasil");
     }
 
     @Test
@@ -167,6 +167,6 @@ public class AppTimerTest {
         assertEquals(90, timer.getDurationMinutes());
         assertTrue(timer.isTracking());
         assertEquals(5400, timer.getRemainingSeconds());
-        System.out.println("Skenario 15: Constructor lengkap semua parameter - BERHASIL");
+        System.out.println("Skenario 15: inisialisasi parameter lengkap objek timer berhasil");
     }
 }

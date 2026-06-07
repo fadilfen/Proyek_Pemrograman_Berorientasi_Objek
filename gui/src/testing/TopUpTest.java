@@ -19,7 +19,7 @@ public class TopUpTest {
         assertNotNull(topup);
         assertEquals(10, topup.getJumlahToken());
         assertEquals("QRIS", topup.getMetode());
-        System.out.println("Skenario 1: Constructor dengan parameter valid - BERHASIL");
+        System.out.println("Skenario 1: pembuatan objek top up berhasil");
     }
 
     @Test
@@ -28,7 +28,7 @@ public class TopUpTest {
         // 5 token x Rp 1.000 = Rp 5.000
         TopUp topup = new TopUp(5, "Transfer");
         assertEquals(5000, topup.hitungTotalBiaya());
-        System.out.println("Skenario 2: hitungTotalBiaya() untuk 5 token - BERHASIL");
+        System.out.println("Skenario 2: perhitungan biaya 5 token berhasil");
     }
 
     @Test
@@ -37,7 +37,7 @@ public class TopUpTest {
         // 10 token x Rp 1.000 = Rp 10.000
         TopUp topup = new TopUp(10, "E-Wallet");
         assertEquals(10000, topup.hitungTotalBiaya());
-        System.out.println("Skenario 3: hitungTotalBiaya() untuk 10 token - BERHASIL");
+        System.out.println("Skenario 3: perhitungan biaya 10 token berhasil");
     }
 
     @Test
@@ -46,7 +46,7 @@ public class TopUpTest {
         // 1 token x Rp 1.000 = Rp 1.000
         TopUp topup = new TopUp(1, "QRIS");
         assertEquals(1000, topup.hitungTotalBiaya());
-        System.out.println("Skenario 4: hitungTotalBiaya() untuk 1 token - BERHASIL");
+        System.out.println("Skenario 4: perhitungan biaya 1 token berhasil");
     }
 
     @Test
@@ -55,7 +55,7 @@ public class TopUpTest {
         // 100 token x Rp 1.000 = Rp 100.000
         TopUp topup = new TopUp(100, "Transfer");
         assertEquals(100000, topup.hitungTotalBiaya());
-        System.out.println("Skenario 5: hitungTotalBiaya() untuk 100 token - BERHASIL");
+        System.out.println("Skenario 5: perhitungan biaya 100 token berhasil");
     }
 
     @Test
@@ -63,7 +63,7 @@ public class TopUpTest {
     public void testHargaPerToken() {
         // Verifikasi harga per token
         assertEquals(1000, TopUp.HARGA_PER_TOKEN);
-        System.out.println("Skenario 6: HARGA_PER_TOKEN adalah konstanta 1000 - BERHASIL");
+        System.out.println("Skenario 6: verifikasi harga token Rp 1.000 berhasil");
     }
 
     @Test
@@ -72,7 +72,7 @@ public class TopUpTest {
         // Memasukkan 25 token
         TopUp topup = new TopUp(25, "QRIS");
         assertEquals(25, topup.getJumlahToken());
-        System.out.println("Skenario 7: getJumlahToken() mengembalikan nilai yang benar - BERHASIL");
+        System.out.println("Skenario 7: mendapatkan jumlah token top up berhasil");
     }
 
     @Test
@@ -81,7 +81,7 @@ public class TopUpTest {
         // Memilih metode E-Wallet
         TopUp topup = new TopUp(15, "E-Wallet");
         assertEquals("E-Wallet", topup.getMetode());
-        System.out.println("Skenario 8: getMetode() mengembalikan metode yang benar - BERHASIL");
+        System.out.println("Skenario 8: mendapatkan metode pembayaran berhasil");
     }
 
     @Test
@@ -91,7 +91,7 @@ public class TopUpTest {
         TopUp topup = new TopUp(20, "QRIS");
         assertEquals("QRIS", topup.getMetode());
         assertEquals(20000, topup.hitungTotalBiaya());
-        System.out.println("Skenario 9: TopUp dengan metode QRIS - BERHASIL");
+        System.out.println("Skenario 9: pembayaran top up menggunakan QRIS berhasil");
     }
 
     @Test
@@ -101,7 +101,7 @@ public class TopUpTest {
         TopUp topup = new TopUp(30, "Transfer");
         assertEquals("Transfer", topup.getMetode());
         assertEquals(30000, topup.hitungTotalBiaya());
-        System.out.println("Skenario 10: TopUp dengan metode Transfer - BERHASIL");
+        System.out.println("Skenario 10: pembayaran top up menggunakan Transfer Bank berhasil");
     }
 
     @Test
@@ -111,7 +111,7 @@ public class TopUpTest {
         TopUp topup = new TopUp(40, "E-Wallet");
         assertEquals("E-Wallet", topup.getMetode());
         assertEquals(40000, topup.hitungTotalBiaya());
-        System.out.println("Skenario 11: TopUp dengan metode E-Wallet - BERHASIL");
+        System.out.println("Skenario 11: pembayaran top up menggunakan E-Wallet berhasil");
     }
 
     @Test
@@ -120,7 +120,7 @@ public class TopUpTest {
         // Test edge case dengan 0 token
         TopUp topup = new TopUp(0, "QRIS");
         assertEquals(0, topup.hitungTotalBiaya());
-        System.out.println("Skenario 12: TopUp dengan 0 token - BERHASIL");
+        System.out.println("Skenario 12: pengujian batas top up 0 token berhasil");
     }
 
     @Test
@@ -133,7 +133,7 @@ public class TopUpTest {
         assertEquals(5000, topup1.hitungTotalBiaya());
         assertEquals(10000, topup2.hitungTotalBiaya());
         assertNotEquals(topup1.getJumlahToken(), topup2.getJumlahToken());
-        System.out.println("Skenario 13: Multiple TopUp instances dengan nilai berbeda - BERHASIL");
+        System.out.println("Skenario 13: pengujian banyak transaksi top up terpisah berhasil");
     }
 
     @Test
@@ -142,7 +142,7 @@ public class TopUpTest {
         // Test dengan 1000 token
         TopUp topup = new TopUp(1000, "Transfer");
         assertEquals(1000000, topup.hitungTotalBiaya());
-        System.out.println("Skenario 14: TopUp dengan jumlah token sangat besar - BERHASIL");
+        System.out.println("Skenario 14: pengujian transaksi top up jumlah besar berhasil");
     }
 
     @Test
@@ -152,6 +152,6 @@ public class TopUpTest {
         TopUp topup = new TopUp(7, "E-Wallet");
         int expected = 7 * TopUp.HARGA_PER_TOKEN;
         assertEquals(expected, topup.hitungTotalBiaya());
-        System.out.println("Skenario 15: Verifikasi formula perhitungan biaya - BERHASIL");
+        System.out.println("Skenario 15: validasi formula perkalian harga token berhasil");
     }
 }

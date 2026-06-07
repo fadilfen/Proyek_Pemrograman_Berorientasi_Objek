@@ -20,7 +20,7 @@ public class LaporanHarianTest {
         ArrayList<AktivitasDigital> aktivitasList = new ArrayList<>();
         LaporanHarian laporan = new LaporanHarian(120, 85, aktivitasList, "John Doe");
         assertNotNull(laporan);
-        System.out.println("Skenario 1: Constructor LaporanHarian valid - BERHASIL");
+        System.out.println("Skenario 1: pembuatan objek laporan harian berhasil");
     }
 
     @Test
@@ -34,7 +34,7 @@ public class LaporanHarianTest {
         assertTrue(hasil.contains("Jane Doe"));
         assertTrue(hasil.contains("Total Screen Time : 0 menit"));
         assertTrue(hasil.contains("Skor Harian       : 100"));
-        System.out.println("Skenario 2: Generate laporan list kosong - BERHASIL");
+        System.out.println("Skenario 2: pembuatan laporan tanpa aktivitas berhasil");
     }
 
     @Test
@@ -49,7 +49,7 @@ public class LaporanHarianTest {
         
         assertTrue(hasil.contains("Instagram"));
         assertTrue(hasil.contains("60 menit"));
-        System.out.println("Skenario 3: Generate laporan 1 aktivitas - BERHASIL");
+        System.out.println("Skenario 3: pembuatan laporan dengan 1 aktivitas berhasil");
     }
 
     @Test
@@ -67,7 +67,7 @@ public class LaporanHarianTest {
         assertTrue(hasil.contains("TikTok"));
         assertTrue(hasil.contains("YouTube"));
         assertTrue(hasil.contains("WhatsApp"));
-        System.out.println("Skenario 4: Generate laporan multiple aktivitas - BERHASIL");
+        System.out.println("Skenario 4: pembuatan laporan dengan banyak aktivitas berhasil");
     }
 
     @Test
@@ -79,7 +79,7 @@ public class LaporanHarianTest {
         String hasil = laporan.generateLaporan();
         
         assertTrue(hasil.contains("Status            : Sehat"));
-        System.out.println("Skenario 5: Status Sehat skor >= 70 - BERHASIL");
+        System.out.println("Skenario 5: penentuan status SEHAT (skor >= 70) berhasil");
     }
 
     @Test
@@ -91,7 +91,7 @@ public class LaporanHarianTest {
         String hasil = laporan.generateLaporan();
         
         assertTrue(hasil.contains("Status            : Kurangi Screen Time"));
-        System.out.println("Skenario 6: Status Kurangi Screen Time skor < 70 - BERHASIL");
+        System.out.println("Skenario 6: penentuan status KURANGI SCREEN TIME (skor < 70) berhasil");
     }
 
     @Test
@@ -103,7 +103,7 @@ public class LaporanHarianTest {
         String hasil = laporan.generateLaporan();
         
         assertTrue(hasil.contains("Nama User         : Emma"));
-        System.out.println("Skenario 7: Laporan menampilkan nama user - BERHASIL");
+        System.out.println("Skenario 7: verifikasi nama user dalam laporan berhasil");
     }
 
     @Test
@@ -115,7 +115,7 @@ public class LaporanHarianTest {
         String hasil = laporan.generateLaporan();
         
         assertTrue(hasil.contains("Total Screen Time : 250 menit"));
-        System.out.println("Skenario 8: Laporan menampilkan total durasi - BERHASIL");
+        System.out.println("Skenario 8: verifikasi total durasi akses dalam laporan berhasil");
     }
 
     @Test
@@ -127,7 +127,7 @@ public class LaporanHarianTest {
         String hasil = laporan.generateLaporan();
         
         assertTrue(hasil.contains("Skor Harian       : 85"));
-        System.out.println("Skenario 9: Laporan menampilkan skor harian - BERHASIL");
+        System.out.println("Skenario 9: verifikasi skor harian dalam laporan berhasil");
     }
 
     @Test
@@ -142,7 +142,7 @@ public class LaporanHarianTest {
         String hasil = laporan.generateLaporan();
         
         assertTrue(hasil.contains("Tanggal           : " + today));
-        System.out.println("Skenario 10: Laporan menampilkan tanggal - BERHASIL");
+        System.out.println("Skenario 10: verifikasi tanggal laporan berhasil");
     }
 
     @Test
@@ -155,7 +155,7 @@ public class LaporanHarianTest {
         
         assertTrue(hasil.contains("Skor Harian       : 0"));
         assertTrue(hasil.contains("Kurangi Screen Time"));
-        System.out.println("Skenario 11: Laporan skor 0 tidak sehat - BERHASIL");
+        System.out.println("Skenario 11: penentuan status buruk pada skor 0 berhasil");
     }
 
     @Test
@@ -168,7 +168,7 @@ public class LaporanHarianTest {
         
         assertTrue(hasil.contains("Skor Harian       : 100"));
         assertTrue(hasil.contains("Sehat"));
-        System.out.println("Skenario 12: Laporan skor 100 sehat - BERHASIL");
+        System.out.println("Skenario 12: penentuan status prima pada skor 100 berhasil");
     }
 
     @Test
@@ -180,7 +180,7 @@ public class LaporanHarianTest {
         String hasil = laporan.generateLaporan();
         
         assertTrue(hasil.contains("Kurangi Screen Time"));
-        System.out.println("Skenario 13: Boundary skor 69 tidak sehat - BERHASIL");
+        System.out.println("Skenario 13: pengujian batas skor kritis 69 berhasil");
     }
 
     @Test
@@ -192,7 +192,7 @@ public class LaporanHarianTest {
         String hasil = laporan.generateLaporan();
         
         assertTrue(hasil.contains("=== LAPORAN HARIAN ==="));
-        System.out.println("Skenario 14: Laporan menampilkan header - BERHASIL");
+        System.out.println("Skenario 14: verifikasi format header laporan berhasil");
     }
 
     @Test
@@ -204,6 +204,6 @@ public class LaporanHarianTest {
         String hasil = laporan.generateLaporan();
         
         assertTrue(hasil.contains("------------------------------"));
-        System.out.println("Skenario 15: Laporan menampilkan separator - BERHASIL");
+        System.out.println("Skenario 15: verifikasi garis pemisah dalam laporan berhasil");
     }
 }

@@ -21,7 +21,7 @@ public class UserTest {
         assertEquals("John Doe", user.getNamaUser());
         assertEquals(100, user.getToken());
         assertEquals("parent", user.getRole());
-        System.out.println("Skenario 1: Constructor parent valid - BERHASIL");
+        System.out.println("Skenario 1: pembuatan user parent berhasil");
     }
 
     @Test
@@ -33,7 +33,7 @@ public class UserTest {
         assertEquals("child", user.getRole());
         assertEquals(1L, user.getParentId());
         assertEquals(10, user.getUmur());
-        System.out.println("Skenario 2: Constructor child valid - BERHASIL");
+        System.out.println("Skenario 2: pembuatan user child berhasil");
     }
 
     @Test
@@ -44,7 +44,7 @@ public class UserTest {
         assertNotNull(user);
         assertEquals("Alice", user.getNamaUser());
         assertEquals("alice123", user.getUsername());
-        System.out.println("Skenario 3: Constructor sederhana child - BERHASIL");
+        System.out.println("Skenario 3: pembuatan user child format sederhana berhasil");
     }
 
     @Test
@@ -53,7 +53,7 @@ public class UserTest {
         // Verifikasi getter id user
         User user = new User(5, "Bob", 75, "parent", null, 0);
         assertEquals(5, user.getId());
-        System.out.println("Skenario 4: getId() mengembalikan id benar - BERHASIL");
+        System.out.println("Skenario 4: mendapatkan ID user berhasil");
     }
 
     @Test
@@ -62,7 +62,7 @@ public class UserTest {
         // Verifikasi getter nama user
         User user = new User(1, "Charlie Brown", 100, "parent", null, 0);
         assertEquals("Charlie Brown", user.getNamaUser());
-        System.out.println("Skenario 5: getNamaUser() mengembalikan nama benar - BERHASIL");
+        System.out.println("Skenario 5: mendapatkan nama user berhasil");
     }
 
     @Test
@@ -71,7 +71,7 @@ public class UserTest {
         // Verifikasi getter token user
         User user = new User(1, "David", 150, "parent", null, 0);
         assertEquals(150, user.getToken());
-        System.out.println("Skenario 6: getToken() mengembalikan token benar - BERHASIL");
+        System.out.println("Skenario 6: mendapatkan token user berhasil");
     }
 
     @Test
@@ -80,7 +80,7 @@ public class UserTest {
         // Verifikasi user adalah parent
         User user = new User(1, "Emma", 100, "parent", null, 0);
         assertTrue(user.isParent());
-        System.out.println("Skenario 7: isParent() true untuk parent - BERHASIL");
+        System.out.println("Skenario 7: verifikasi status parent berhasil");
     }
 
     @Test
@@ -89,7 +89,7 @@ public class UserTest {
         // Verifikasi user bukan parent
         User user = new User(2, "Frank", 50, "child", 1L, 12);
         assertFalse(user.isParent());
-        System.out.println("Skenario 8: isParent() false untuk child - BERHASIL");
+        System.out.println("Skenario 8: verifikasi status non-parent berhasil");
     }
 
     @Test
@@ -98,7 +98,7 @@ public class UserTest {
         // Verifikasi user adalah child
         User user = new User(2, "Grace", 0, "child", 1L, 9);
         assertTrue(user.isChild());
-        System.out.println("Skenario 9: isChild() true untuk child - BERHASIL");
+        System.out.println("Skenario 9: verifikasi status child berhasil");
     }
 
     @Test
@@ -107,7 +107,7 @@ public class UserTest {
         // Verifikasi user bukan child
         User user = new User(1, "Henry", 200, "parent", null, 0);
         assertFalse(user.isChild());
-        System.out.println("Skenario 10: isChild() false untuk parent - BERHASIL");
+        System.out.println("Skenario 10: verifikasi status non-child berhasil");
     }
 
     @Test
@@ -116,7 +116,7 @@ public class UserTest {
         // Verifikasi getter umur child
         User user = new User(3, "Ivy", 0, "child", 1L, 7);
         assertEquals(7, user.getUmur());
-        System.out.println("Skenario 11: getUmur() mengembalikan umur benar - BERHASIL");
+        System.out.println("Skenario 11: mendapatkan umur user child berhasil");
     }
 
     @Test
@@ -124,7 +124,7 @@ public class UserTest {
     public void testGetParentIdNull() {
         User user = new User(1, "Jack", 100, "parent", null, 0);
         assertNull(user.getParentId());
-        System.out.println("Skenario 12: getParentId() null untuk parent - BERHASIL");
+        System.out.println("Skenario 12: verifikasi parent ID kosong pada parent berhasil");
     }
 
     @Test
@@ -132,7 +132,7 @@ public class UserTest {
     public void testGetParentIdValue() {
         User user = new User(3, "Kate", 0, "child", 5L, 11);
         assertEquals(5L, user.getParentId());
-        System.out.println("Skenario 13: getParentId() mengembalikan id parent - BERHASIL");
+        System.out.println("Skenario 13: mendapatkan parent ID pada child berhasil");
     }
 
     @Test
@@ -142,7 +142,7 @@ public class UserTest {
         User user = new User(1, "Leo", "leo123", "parent", 0);
         user.setUsername("leo_new");
         assertEquals("leo_new", user.getUsername());
-        System.out.println("Skenario 14: setUsername() mengubah username - BERHASIL");
+        System.out.println("Skenario 14: mengubah username berhasil");
     }
 
     @Test
@@ -152,6 +152,6 @@ public class UserTest {
         User user = new User(1, "Baby", 0, "child", 1L, 4);
         int score = user.hitungScoreKesehatan();
         assertEquals(100, score);
-        System.out.println("Skenario 15: hitungScoreKesehatan() anak < 5 tahun - BERHASIL");
+        System.out.println("Skenario 15: perhitungan skor kesehatan balita berhasil");
     }
 }
