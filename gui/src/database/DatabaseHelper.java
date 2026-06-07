@@ -65,7 +65,7 @@ public class DatabaseHelper {
      */
     private static void alterTablesIfNeeded() {
         try {
-            // Cek app_timers
+            // Cek app_timers: tambah kolom tanggal
             String checkSql = "SELECT * FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = 'mindfull_db' AND TABLE_NAME = 'app_timers' AND COLUMN_NAME = 'tanggal'";
             ResultSet rs = connection.createStatement().executeQuery(checkSql);
             if (!rs.next()) {
@@ -73,7 +73,15 @@ public class DatabaseHelper {
                 System.out.println("[DB] Kolom tanggal berhasil ditambahkan ke app_timers");
             }
             
-            // Cek users umur
+            // Cek app_timers: tambah kolom remaining_seconds
+            String checkSqlRem = "SELECT * FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = 'mindfull_db' AND TABLE_NAME = 'app_timers' AND COLUMN_NAME = 'remaining_seconds'";
+            ResultSet rsRem = connection.createStatement().executeQuery(checkSqlRem);
+            if (!rsRem.next()) {
+                connection.createStatement().execute("ALTER TABLE app_timers ADD COLUMN remaining_seconds BIGINT DEFAULT NULL");
+                System.out.println("[DB] Kolom remaining_seconds berhasil ditambahkan ke app_timers");
+            }
+            
+            // Cek users: tambah kolom umur
             String checkSql2 = "SELECT * FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = 'mindfull_db' AND TABLE_NAME = 'users' AND COLUMN_NAME = 'umur'";
             ResultSet rs2 = connection.createStatement().executeQuery(checkSql2);
             if (!rs2.next()) {
@@ -118,8 +126,8 @@ public class DatabaseHelper {
     public static void tambahAppTimer(long childId, String appName, int durationMinutes, 
                                       java.time.LocalDate tanggal, java.time.LocalTime startTime, java.time.LocalTime endTime) 
             throws SQLException {
-        String sql = "INSERT INTO app_timers (child_id, app_name, duration_minutes, tanggal, start_time, end_time, is_tracking) "
-                   + "VALUES (?, ?, ?, ?, ?, ?, 1)";
+        String sql = "INSERT INTO app_timers (child_id, app_name, duration_minutes, tanggal, start_time, end_time, is_tracking, remaining_seconds) "
+                   + "VALUES (?, ?, ?, ?, ?, ?, 1, ?)";
         try (PreparedStatement ps = getConnection().prepareStatement(sql)) {
             ps.setLong(1, childId);
             ps.setString(2, appName);
@@ -127,6 +135,7 @@ public class DatabaseHelper {
             ps.setDate(4, java.sql.Date.valueOf(tanggal));
             ps.setTime(5, java.sql.Time.valueOf(startTime));
             ps.setTime(6, java.sql.Time.valueOf(endTime));
+            ps.setLong(7, durationMinutes * 60L); // Set sisa waktu default sesuai durasi
             ps.executeUpdate();
         }
     }
@@ -138,6 +147,18 @@ public class DatabaseHelper {
         String sql = "UPDATE app_timers SET is_tracking = ? WHERE id = ?";
         try (PreparedStatement ps = getConnection().prepareStatement(sql)) {
             ps.setBoolean(1, isTracking);
+            ps.setLong(2, timerId);
+            ps.executeUpdate();
+        }
+    }
+    
+    /**
+     * Update sisa waktu detik aplikasi
+     */
+    public static void updateAppTimerRemainingSeconds(long timerId, long remainingSeconds) throws SQLException {
+        String sql = "UPDATE app_timers SET remaining_seconds = ? WHERE id = ?";
+        try (PreparedStatement ps = getConnection().prepareStatement(sql)) {
+            ps.setLong(1, remainingSeconds);
             ps.setLong(2, timerId);
             ps.executeUpdate();
         }

@@ -16,6 +16,9 @@ public class AppTimer {
     private LocalTime startTime;
     private LocalTime endTime;
     private boolean isTracking;
+    
+    // Properti untuk mensimulasikan timer hitung mundur
+    private long remainingSeconds;
 
     public AppTimer(long childId, String appName, int durationMinutes, java.time.LocalDate tanggal, LocalTime startTime) {
         this.childId = childId;
@@ -25,10 +28,11 @@ public class AppTimer {
         this.startTime = startTime;
         this.endTime = startTime.plusMinutes(durationMinutes);
         this.isTracking = false;
+        this.remainingSeconds = durationMinutes * 60L;
     }
 
     public AppTimer(long id, long childId, String appName, int durationMinutes, 
-                    java.time.LocalDate tanggal, LocalTime startTime, LocalTime endTime, boolean isTracking) {
+                    java.time.LocalDate tanggal, LocalTime startTime, LocalTime endTime, boolean isTracking, long remainingSeconds) {
         this.id = id;
         this.childId = childId;
         this.appName = appName;
@@ -37,7 +41,36 @@ public class AppTimer {
         this.startTime = startTime;
         this.endTime = endTime;
         this.isTracking = isTracking;
+        this.remainingSeconds = remainingSeconds;
     }
+
+    // ── Logika Simulasi Timer (Untuk GUI Dummy Phone) ─────────────
+    
+    public long getRemainingSeconds() {
+        return remainingSeconds;
+    }
+
+    public void decrementRemainingSeconds() {
+        if (remainingSeconds > 0) remainingSeconds--;
+    }
+
+    public String getSimulatedRemainingTimeString() {
+        if (remainingSeconds <= 0) return "Waktu habis";
+        long hours = remainingSeconds / 3600;
+        long mins = (remainingSeconds % 3600) / 60;
+        long secs = remainingSeconds % 60;
+        if (hours > 0) {
+            return String.format("%02d:%02d:%02d tersisa", hours, mins, secs);
+        } else {
+            return String.format("%02d:%02d tersisa", mins, secs);
+        }
+    }
+    
+    public boolean isSimulatedSafe() {
+        return remainingSeconds > (durationMinutes * 60L * 0.2);
+    }
+    
+    // ──────────────────────────────────────────────────────────────
 
     /**
      * Menghitung sisa waktu dari sekarang sampai end time

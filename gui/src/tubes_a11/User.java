@@ -273,15 +273,21 @@ public class User {
             while (rs.next()) {
                 java.sql.Date sqlDate = rs.getDate("tanggal");
                 java.time.LocalDate tgl = (sqlDate != null) ? sqlDate.toLocalDate() : java.time.LocalDate.now();
+                int durationMins = rs.getInt("duration_minutes");
+                long remSecs = rs.getObject("remaining_seconds") != null ? 
+                               rs.getLong("remaining_seconds") : 
+                               (durationMins * 60L);
+                               
                 AppTimer timer = new AppTimer(
                     rs.getLong("id"),
                     rs.getLong("child_id"),
                     rs.getString("app_name"),
-                    rs.getInt("duration_minutes"),
+                    durationMins,
                     tgl,
                     rs.getTime("start_time").toLocalTime(),
                     rs.getTime("end_time").toLocalTime(),
-                    rs.getBoolean("is_tracking")
+                    rs.getBoolean("is_tracking"),
+                    remSecs
                 );
                 appTimers.add(timer);
             }
