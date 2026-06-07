@@ -18,7 +18,7 @@ import java.sql.SQLException;
 public class DatabaseHelper {
 
     // ── Konfigurasi koneksi MySQL ─────────────────────────────────────────
-    private static final String JDBC_URL = "jdbc:mysql://localhost:3307/mindfull_db" +
+    private static final String JDBC_URL = "jdbc:mysql://localhost:3306/mindfull_db" +
             "?useSSL=false" +
             "&serverTimezone=Asia/Jakarta" +
             "&allowPublicKeyRetrieval=true" +
