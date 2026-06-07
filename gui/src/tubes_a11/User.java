@@ -19,6 +19,7 @@ public class User {
     private int    token;
     private String role; // 'parent' atau 'child'
     private Long   parentId; // null jika parent, id parent jika child
+    private int    umur; // umur anak
 
     // ── Daftar aktivitas di-load dari tabel 'aktivitas_digital' ──────────
     private ArrayList<AktivitasDigital> aktivitasList = new ArrayList<>();
@@ -40,24 +41,27 @@ public class User {
      * @param token    token saat ini
      * @param role     role user (parent/child)
      * @param parentId id parent (null jika parent)
+     * @param umur     umur pengguna (0 jika parent)
      */
-    public User(long id, String namaUser, int token, String role, Long parentId) {
+    public User(long id, String namaUser, int token, String role, Long parentId, int umur) {
         this.id       = id;
         this.namaUser = namaUser;
         this.token    = token;
         this.role     = role;
         this.parentId = parentId;
+        this.umur     = umur;
         // Data di-load nanti saat dibutuhkan (lazy loading)
     }
     
     /**
      * Konstruktor sederhana untuk child account (tanpa load data)
      */
-    public User(long id, String namaUser, String username, String role) {
+    public User(long id, String namaUser, String username, String role, int umur) {
         this.id = id;
         this.namaUser = namaUser;
         this.username = username;
         this.role = role;
+        this.umur = umur;
     }
 
     // ── Operasi Database ──────────────────────────────────────────────────
@@ -187,14 +191,33 @@ public class User {
 
     /**
      * Menghitung skor kesehatan (0–100) berdasarkan aktivitas.
-     * Logika sama dengan proyek Spring Boot.
+     * Batas penggunaan layar harian berdasarkan umur:
+     * - Umur < 5 tahun: max 60 menit
+     * - Umur 5 - 10 tahun: max 120 menit
+     * - Umur 11 - 18 tahun: max 180 menit
+     * - Umur > 18 tahun: max 240 menit
      */
     public int hitungScoreKesehatan() {
         int score = 100;
-        for (AktivitasDigital a : aktivitasList) {
-            score -= a.getDurasiMenit() / 10;
-            if (a.melebihiBatas()) score -= 20;
+        int totalScreenTime = hitungTotalScreenTime();
+        
+        int batasHarian = 240; // Default untuk > 18 tahun
+        if (umur < 5) batasHarian = 60;
+        else if (umur <= 10) batasHarian = 120;
+        else if (umur <= 18) batasHarian = 180;
+        
+        // Pengurangan karena melebihi batas harian (20 poin per setiap jam lebih)
+        if (totalScreenTime > batasHarian) {
+            int kelebihanJam = (totalScreenTime - batasHarian) / 60;
+            if ((totalScreenTime - batasHarian) % 60 > 0) kelebihanJam++; // Bulatkan ke atas untuk setiap pecahan jam
+            score -= (kelebihanJam * 20);
         }
+
+        // Pengurangan spesifik aplikasi
+        for (AktivitasDigital a : aktivitasList) {
+            if (a.melebihiBatas()) score -= 10;
+        }
+        
         return Math.max(0, score);
     }
 
@@ -218,7 +241,7 @@ public class User {
         
         childAccounts.clear();
         try {
-            String sql = "SELECT id, nama_user, username, role FROM users WHERE parent_id = ?";
+            String sql = "SELECT id, nama_user, username, role, umur FROM users WHERE parent_id = ?";
             PreparedStatement ps = DatabaseHelper.getConnection().prepareStatement(sql);
             ps.setLong(1, id);
             ResultSet rs = ps.executeQuery();
@@ -227,7 +250,8 @@ public class User {
                     rs.getLong("id"),
                     rs.getString("nama_user"),
                     rs.getString("username"),
-                    rs.getString("role")
+                    rs.getString("role"),
+                    rs.getInt("umur")
                 );
                 childAccounts.add(child);
             }
@@ -247,11 +271,14 @@ public class User {
             ps.setLong(1, id);
             ResultSet rs = ps.executeQuery();
             while (rs.next()) {
+                java.sql.Date sqlDate = rs.getDate("tanggal");
+                java.time.LocalDate tgl = (sqlDate != null) ? sqlDate.toLocalDate() : java.time.LocalDate.now();
                 AppTimer timer = new AppTimer(
                     rs.getLong("id"),
                     rs.getLong("child_id"),
                     rs.getString("app_name"),
                     rs.getInt("duration_minutes"),
+                    tgl,
                     rs.getTime("start_time").toLocalTime(),
                     rs.getTime("end_time").toLocalTime(),
                     rs.getBoolean("is_tracking")
@@ -271,6 +298,7 @@ public class User {
     public int    getToken()                    { return token; }
     public String getRole()                     { return role; }
     public Long   getParentId()                 { return parentId; }
+    public int    getUmur()                     { return umur; }
     public boolean isParent()                   { return "parent".equals(role); }
     public boolean isChild()                    { return "child".equals(role); }
     

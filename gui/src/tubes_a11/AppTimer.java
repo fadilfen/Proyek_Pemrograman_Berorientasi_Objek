@@ -12,25 +12,28 @@ public class AppTimer {
     private long childId;
     private String appName;
     private int durationMinutes;
+    private java.time.LocalDate tanggal;
     private LocalTime startTime;
     private LocalTime endTime;
     private boolean isTracking;
 
-    public AppTimer(long childId, String appName, int durationMinutes, LocalTime startTime) {
+    public AppTimer(long childId, String appName, int durationMinutes, java.time.LocalDate tanggal, LocalTime startTime) {
         this.childId = childId;
         this.appName = appName;
         this.durationMinutes = durationMinutes;
+        this.tanggal = tanggal;
         this.startTime = startTime;
         this.endTime = startTime.plusMinutes(durationMinutes);
         this.isTracking = false;
     }
 
     public AppTimer(long id, long childId, String appName, int durationMinutes, 
-                    LocalTime startTime, LocalTime endTime, boolean isTracking) {
+                    java.time.LocalDate tanggal, LocalTime startTime, LocalTime endTime, boolean isTracking) {
         this.id = id;
         this.childId = childId;
         this.appName = appName;
         this.durationMinutes = durationMinutes;
+        this.tanggal = tanggal;
         this.startTime = startTime;
         this.endTime = endTime;
         this.isTracking = isTracking;
@@ -80,6 +83,7 @@ public class AppTimer {
     public long getChildId() { return childId; }
     public String getAppName() { return appName; }
     public int getDurationMinutes() { return durationMinutes; }
+    public java.time.LocalDate getTanggal() { return tanggal; }
     public LocalTime getStartTime() { return startTime; }
     public LocalTime getEndTime() { return endTime; }
     public boolean isTracking() { return isTracking; }

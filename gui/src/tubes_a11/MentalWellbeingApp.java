@@ -170,13 +170,14 @@ public class MentalWellbeingApp extends JFrame {
             Object[] result = UserManager.login(uname, pwd);
             if (result != null) {
                 currentUsername = uname;
-                // result: [namaUser, idUser, token, role, parentId]
+                // result: [namaUser, idUser, token, role, parentId, umur]
                 user = new User(
                     (Long) result[1],      // id
                     (String) result[0],    // namaUser
                     (Integer) result[2],   // token
                     (String) result[3],    // role
-                    (Long) result[4]       // parentId
+                    (Long) result[4],      // parentId
+                    (Integer) result[5]    // umur
                 );
                 user.setUsername(uname);
                 f.dispose();
@@ -450,18 +451,26 @@ public class MentalWellbeingApp extends JFrame {
 
         if (user.isParent()) {
             // Dashboard untuk Parent
-            int score  = user.hitungScoreKesehatan();
-            int screen = user.hitungTotalScreenTime();
+            int avgScore = 100;
+            int childrenCount = user.getChildAccounts().size();
+            if (childrenCount > 0) {
+                int totalScore = 0;
+                for (User child : user.getChildAccounts()) {
+                    child.memuatAktivitasDariDB();
+                    totalScore += child.hitungScoreKesehatan();
+                }
+                avgScore = totalScore / childrenCount;
+            }
 
             JPanel grid = new JPanel(new GridLayout(1, 3, 16, 0));
             grid.setOpaque(false);
             grid.setBorder(new EmptyBorder(0, 0, 20, 0));
             grid.add(statCard("TOKEN BALANCE",    String.valueOf(user.getToken()),
                               "Available tokens",      "🪙", PRIMARY, PRIMARY_DIM));
-            grid.add(statCard("WELLNESS SCORE",   String.valueOf(score),
-                              score >= 70 ? "Status: Sehat ✓" : "Perlu perhatian",
+            grid.add(statCard("CHILDREN WELLNESS",   String.valueOf(avgScore),
+                              avgScore >= 70 ? "Status: Aman ✓" : "Perlu perhatian",
                               "💚", SUCCESS, SUCCESS_DIM));
-            grid.add(statCard("CHILDREN ACCOUNTS", String.valueOf(user.getChildAccounts().size()),
+            grid.add(statCard("CHILDREN ACCOUNTS", String.valueOf(childrenCount),
                               "Total akun anak", "👶", INFO, INFO_DIM));
             page.add(grid, BorderLayout.CENTER);
 
@@ -846,9 +855,32 @@ public class MentalWellbeingApp extends JFrame {
         JButton genBtn = btnPrimary("Generate Summary Report");
         JPanel reportArea = new JPanel(new BorderLayout());
         reportArea.setOpaque(false);
+        
+        JComboBox<String> targetCombo = new JComboBox<>();
+        if (!user.isParent()) {
+            targetCombo.addItem("My Report");
+        } else {
+            for (User child : user.getChildAccounts()) {
+                targetCombo.addItem("Anak: " + child.getNamaUser());
+            }
+        }
+        styleCombo(targetCombo);
 
         genBtn.addActionListener(e -> {
-            String laporan = user.lihatLaporan().generateLaporan();
+            String laporan = "";
+            if (!user.isParent()) {
+                laporan = user.lihatLaporan().generateLaporan();
+            } else {
+                if (user.getChildAccounts().isEmpty()) {
+                    toast(this, "Belum ada akun anak!", WARNING);
+                    return;
+                }
+                int childIdx = targetCombo.getSelectedIndex();
+                User child = user.getChildAccounts().get(childIdx);
+                child.memuatAktivitasDariDB(); // Muat aktivitas anak dari database
+                laporan = child.lihatLaporan().generateLaporan();
+            }
+            
             reportArea.removeAll();
             JEditorPane ep = new JEditorPane("text/html", buildReportHtml(laporan));
             ep.setEditable(false);
@@ -858,8 +890,12 @@ public class MentalWellbeingApp extends JFrame {
             reportArea.revalidate(); reportArea.repaint();
         });
 
-        JPanel topBar = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
-        topBar.setOpaque(false); topBar.add(genBtn);
+        JPanel topBar = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 0));
+        topBar.setOpaque(false);
+        if (user.isParent() && targetCombo.getItemCount() > 0) {
+            topBar.add(targetCombo);
+        }
+        topBar.add(genBtn);
         card.add(topBar, BorderLayout.NORTH);
 
         JScrollPane sp = new JScrollPane(reportArea);
@@ -1330,6 +1366,11 @@ public class MentalWellbeingApp extends JFrame {
         g.gridy=row++; g.insets=new Insets(0,0,10,0); leftCard.add(childUserField, g);
         
         g.gridy=row++; g.insets=new Insets(4,0,4,0);
+        leftCard.add(lbl("Umur", F_CAPTION, TEXT_3), g);
+        JTextField childUmurField = field("Umur anak (contoh: 12)");
+        g.gridy=row++; g.insets=new Insets(0,0,10,0); leftCard.add(childUmurField, g);
+        
+        g.gridy=row++; g.insets=new Insets(4,0,4,0);
         leftCard.add(lbl("Password", F_CAPTION, TEXT_3), g);
         JPasswordField childPassField = passField("Password anak");
         g.gridy=row++; g.insets=new Insets(0,0,18,0); leftCard.add(childPassField, g);
@@ -1340,17 +1381,27 @@ public class MentalWellbeingApp extends JFrame {
         addChildBtn.addActionListener(e -> {
             String nama = childNameField.getText().trim();
             String username = childUserField.getText().trim();
+            String umurStr = childUmurField.getText().trim();
             String password = new String(childPassField.getPassword());
             
-            if (nama.isEmpty() || username.isEmpty() || password.isEmpty()) {
+            if (nama.isEmpty() || username.isEmpty() || password.isEmpty() || umurStr.isEmpty()) {
                 toast(this, "Semua field harus diisi!", WARNING);
                 return;
             }
             
-            if (UserManager.registerChild(user.getId(), username, password, nama)) {
+            int umur = 0;
+            try {
+                umur = Integer.parseInt(umurStr);
+            } catch (NumberFormatException ex) {
+                toast(this, "Umur harus berupa angka!", WARNING);
+                return;
+            }
+            
+            if (UserManager.registerChild(user.getId(), username, password, nama, umur)) {
                 toast(this, "Akun anak berhasil ditambahkan!", SUCCESS);
                 childNameField.setText("");
                 childUserField.setText("");
+                childUmurField.setText("");
                 childPassField.setText("");
                 user.refreshChildAccounts();
                 showManageChildrenPage(); // refresh
@@ -1438,7 +1489,7 @@ public class MentalWellbeingApp extends JFrame {
      */
     private void showSetTimerDialog(User child) {
         JDialog dialog = new JDialog(this, "Set Timer - " + child.getNamaUser(), true);
-        dialog.setSize(500, 450);
+        dialog.setSize(500, 520);
         dialog.setLocationRelativeTo(this);
         
         JPanel panel = new JPanel(new BorderLayout(0, 16));
@@ -1457,30 +1508,36 @@ public class MentalWellbeingApp extends JFrame {
         
         String[] apps = {"TikTok", "Instagram", "YouTube", "WhatsApp", "Netflix", "Spotify", "Twitter", "Facebook"};
         JComboBox<String> appCombo = styledCombo(apps);
-        JTextField durationField = field("Durasi (menit)");
         
-        // Start time picker (Hour : Minute)
-        JComboBox<Integer> hourCombo = new JComboBox<>();
-        JComboBox<Integer> minuteCombo = new JComboBox<>();
-        for (int i = 0; i < 24; i++) hourCombo.addItem(i);
-        for (int i = 0; i < 60; i += 15) minuteCombo.addItem(i);
-        hourCombo.setSelectedItem(8); // default 08:00
-        minuteCombo.setSelectedItem(0);
-        styleCombo(hourCombo);
-        styleCombo(minuteCombo);
+        // Tanggal Picker
+        JSpinner dateSpinner = new JSpinner(new SpinnerDateModel());
+        JSpinner.DateEditor dateEditor = new JSpinner.DateEditor(dateSpinner, "dd/MM/yyyy");
+        dateSpinner.setEditor(dateEditor);
+        dateSpinner.setPreferredSize(new Dimension(260, 38));
+        dateSpinner.setFont(F_BODY);
         
-        JPanel timePanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 0));
-        timePanel.setOpaque(false);
-        timePanel.add(hourCombo);
-        timePanel.add(lbl(":", F_BODY, TEXT_1));
-        timePanel.add(minuteCombo);
+        // Jam Mulai Picker
+        JSpinner startSpinner = new JSpinner(new SpinnerDateModel());
+        JSpinner.DateEditor startEditor = new JSpinner.DateEditor(startSpinner, "HH:mm");
+        startSpinner.setEditor(startEditor);
+        startSpinner.setPreferredSize(new Dimension(260, 38));
+        startSpinner.setFont(F_BODY);
+        
+        // Jam Berakhir Picker
+        JSpinner endSpinner = new JSpinner(new SpinnerDateModel());
+        JSpinner.DateEditor endEditor = new JSpinner.DateEditor(endSpinner, "HH:mm");
+        endSpinner.setEditor(endEditor);
+        endSpinner.setPreferredSize(new Dimension(260, 38));
+        endSpinner.setFont(F_BODY);
         
         g.gridy=row++; formPanel.add(lbl("Aplikasi", F_CAPTION, TEXT_3), g);
         g.gridy=row++; g.insets=new Insets(0,0,10,0); formPanel.add(appCombo, g);
-        g.gridy=row++; g.insets=new Insets(4,0,4,0); formPanel.add(lbl("Durasi (menit)", F_CAPTION, TEXT_3), g);
-        g.gridy=row++; g.insets=new Insets(0,0,10,0); formPanel.add(durationField, g);
+        g.gridy=row++; g.insets=new Insets(4,0,4,0); formPanel.add(lbl("Tanggal", F_CAPTION, TEXT_3), g);
+        g.gridy=row++; g.insets=new Insets(0,0,10,0); formPanel.add(dateSpinner, g);
         g.gridy=row++; g.insets=new Insets(4,0,4,0); formPanel.add(lbl("Jam Mulai", F_CAPTION, TEXT_3), g);
-        g.gridy=row++; g.insets=new Insets(0,0,10,0); formPanel.add(timePanel, g);
+        g.gridy=row++; g.insets=new Insets(0,0,10,0); formPanel.add(startSpinner, g);
+        g.gridy=row++; g.insets=new Insets(4,0,4,0); formPanel.add(lbl("Jam Berakhir", F_CAPTION, TEXT_3), g);
+        g.gridy=row++; g.insets=new Insets(0,0,10,0); formPanel.add(endSpinner, g);
         
         panel.add(formPanel, BorderLayout.CENTER);
         
@@ -1488,27 +1545,8 @@ public class MentalWellbeingApp extends JFrame {
         JPanel btnPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 0));
         btnPanel.setOpaque(false);
         
-        JButton saveBtn = btnPrimary("Simpan");
-        JButton trackBtn = btnSuccess("Track (−5 Token)");
+        JButton trackBtn = btnSuccess("Generate Timer (−5 Token)");
         JButton cancelBtn = btnLink("Batal");
-        
-        saveBtn.addActionListener(e -> {
-            try {
-                String appName = appCombo.getSelectedItem().toString();
-                int duration = Integer.parseInt(durationField.getText().trim());
-                int hour = (Integer) hourCombo.getSelectedItem();
-                int minute = (Integer) minuteCombo.getSelectedItem();
-                
-                java.time.LocalTime startTime = java.time.LocalTime.of(hour, minute);
-                java.time.LocalTime endTime = startTime.plusMinutes(duration);
-                
-                DatabaseHelper.tambahAppTimer(child.getId(), appName, duration, startTime, endTime);
-                toast(this, "Timer berhasil disimpan!", SUCCESS);
-                dialog.dispose();
-            } catch (Exception ex) {
-                toast(this, "Error: " + ex.getMessage(), DANGER);
-            }
-        });
         
         trackBtn.addActionListener(e -> {
             if (user.getToken() < 5) {
@@ -1517,19 +1555,35 @@ public class MentalWellbeingApp extends JFrame {
             }
             
             try {
-                DatabaseHelper.startTrackingForChild(child.getId());
-                user.kurangiToken(5);
-                toast(this, "Tracking dimulai! −5 token", SUCCESS);
+                String appName = appCombo.getSelectedItem().toString();
+                
+                java.util.Date dateVal = (java.util.Date) dateSpinner.getValue();
+                java.util.Date startVal = (java.util.Date) startSpinner.getValue();
+                java.util.Date endVal = (java.util.Date) endSpinner.getValue();
+                
+                java.time.LocalDate tanggal = dateVal.toInstant().atZone(java.time.ZoneId.systemDefault()).toLocalDate();
+                java.time.LocalTime startTime = startVal.toInstant().atZone(java.time.ZoneId.systemDefault()).toLocalTime();
+                java.time.LocalTime endTime = endVal.toInstant().atZone(java.time.ZoneId.systemDefault()).toLocalTime();
+                
+                int duration = (int) java.time.Duration.between(startTime, endTime).toMinutes();
+                if (duration <= 0) {
+                    toast(this, "Jam berakhir harus setelah jam mulai!", WARNING);
+                    return;
+                }
+                
+                DatabaseHelper.tambahAppTimer(child.getId(), appName, duration, tanggal, startTime, endTime);
+                user.kurangiToken(5); // Deduct parent token
+                
+                toast(this, "Timer berhasil digenerate! −5 token", SUCCESS);
                 dialog.dispose();
             } catch (Exception ex) {
-                toast(this, "Error: " + ex.getMessage(), DANGER);
+                toast(this, "Error: Data tidak valid atau " + ex.getMessage(), DANGER);
             }
         });
         
         cancelBtn.addActionListener(e -> dialog.dispose());
         
         btnPanel.add(cancelBtn);
-        btnPanel.add(saveBtn);
         btnPanel.add(trackBtn);
         panel.add(btnPanel, BorderLayout.SOUTH);
         

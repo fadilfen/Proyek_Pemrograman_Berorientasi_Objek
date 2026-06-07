@@ -28,7 +28,8 @@ public class UserManager {
                     rs.getLong("id"), 
                     rs.getInt("token"),
                     rs.getString("role"),
-                    parentId
+                    parentId,
+                    rs.getInt("umur")
                 };
             }
         } catch (SQLException e) {
@@ -57,9 +58,9 @@ public class UserManager {
     /**
      * Mendaftarkan child account oleh parent
      */
-    public static boolean registerChild(long parentId, String username, String password, String namaLengkap) {
+    public static boolean registerChild(long parentId, String username, String password, String namaLengkap, int umur) {
         try {
-            return DatabaseHelper.daftarChildUser(parentId, namaLengkap, username, password);
+            return DatabaseHelper.daftarChildUser(parentId, namaLengkap, username, password, umur);
         } catch (SQLException e) {
             System.err.println("[UserManager] Error register child: " + e.getMessage());
             return false;

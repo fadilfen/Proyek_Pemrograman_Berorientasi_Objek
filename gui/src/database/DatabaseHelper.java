@@ -50,12 +50,38 @@ public class DatabaseHelper {
                 // Set connection properties untuk performa
                 connection.setAutoCommit(true);
                 System.out.println("[DB] Koneksi ke MySQL berhasil");
+                alterTablesIfNeeded(); // Ensure the table has the required column
             }
             return connection;
         } catch (ClassNotFoundException e) {
             throw new SQLException(
                 "Driver MySQL tidak ditemukan. " +
                 "Pastikan mysql-connector-j.jar ada di classpath.", e);
+        }
+    }
+
+    /**
+     * Pastikan tabel memiliki kolom yang dibutuhkan (tanggal dan umur)
+     */
+    private static void alterTablesIfNeeded() {
+        try {
+            // Cek app_timers
+            String checkSql = "SELECT * FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = 'mindfull_db' AND TABLE_NAME = 'app_timers' AND COLUMN_NAME = 'tanggal'";
+            ResultSet rs = connection.createStatement().executeQuery(checkSql);
+            if (!rs.next()) {
+                connection.createStatement().execute("ALTER TABLE app_timers ADD COLUMN tanggal DATE");
+                System.out.println("[DB] Kolom tanggal berhasil ditambahkan ke app_timers");
+            }
+            
+            // Cek users umur
+            String checkSql2 = "SELECT * FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = 'mindfull_db' AND TABLE_NAME = 'users' AND COLUMN_NAME = 'umur'";
+            ResultSet rs2 = connection.createStatement().executeQuery(checkSql2);
+            if (!rs2.next()) {
+                connection.createStatement().execute("ALTER TABLE users ADD COLUMN umur INT DEFAULT 0");
+                System.out.println("[DB] Kolom umur berhasil ditambahkan ke users");
+            }
+        } catch (SQLException e) {
+            System.err.println("[DB] Error saat mengecek atau mengubah tabel: " + e.getMessage());
         }
     }
 
@@ -90,16 +116,17 @@ public class DatabaseHelper {
      * Menambahkan app timer untuk child
      */
     public static void tambahAppTimer(long childId, String appName, int durationMinutes, 
-                                      java.time.LocalTime startTime, java.time.LocalTime endTime) 
+                                      java.time.LocalDate tanggal, java.time.LocalTime startTime, java.time.LocalTime endTime) 
             throws SQLException {
-        String sql = "INSERT INTO app_timers (child_id, app_name, duration_minutes, start_time, end_time, is_tracking) "
-                   + "VALUES (?, ?, ?, ?, ?, 0)";
+        String sql = "INSERT INTO app_timers (child_id, app_name, duration_minutes, tanggal, start_time, end_time, is_tracking) "
+                   + "VALUES (?, ?, ?, ?, ?, ?, 1)";
         try (PreparedStatement ps = getConnection().prepareStatement(sql)) {
             ps.setLong(1, childId);
             ps.setString(2, appName);
             ps.setInt(3, durationMinutes);
-            ps.setTime(4, java.sql.Time.valueOf(startTime));
-            ps.setTime(5, java.sql.Time.valueOf(endTime));
+            ps.setDate(4, java.sql.Date.valueOf(tanggal));
+            ps.setTime(5, java.sql.Time.valueOf(startTime));
+            ps.setTime(6, java.sql.Time.valueOf(endTime));
             ps.executeUpdate();
         }
     }
@@ -172,15 +199,16 @@ public class DatabaseHelper {
      * Mendaftarkan child account oleh parent
      * @param parentId id parent yang membuat child
      */
-    public static boolean daftarChildUser(long parentId, String namaUser, String username, String password)
+    public static boolean daftarChildUser(long parentId, String namaUser, String username, String password, int umur)
             throws SQLException {
         if (usernameAda(username)) return false;
-        String sql = "INSERT INTO users (nama_user, username, password, token, role, parent_id) VALUES (?,?,?,0,'child',?)";
+        String sql = "INSERT INTO users (nama_user, username, password, token, role, parent_id, umur) VALUES (?,?,?,0,'child',?,?)";
         try (PreparedStatement ps = getConnection().prepareStatement(sql)) {
             ps.setString(1, namaUser);
             ps.setString(2, username);
             ps.setString(3, password);
             ps.setLong(4, parentId);
+            ps.setInt(5, umur);
             ps.executeUpdate();
             return true;
         }
