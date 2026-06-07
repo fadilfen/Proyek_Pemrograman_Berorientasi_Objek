@@ -8,6 +8,7 @@ import java.awt.*;
 import java.awt.event.*;
 import java.awt.geom.*;
 import java.time.LocalDate;
+import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 
 /**
@@ -36,29 +37,41 @@ public class MentalWellbeingApp extends JFrame {
     // ── Panel nav aktif di sidebar (JPanel, bukan JButton, agar bebas shadow Nimbus) ──
     private JPanel activeNavPanel = null;
 
+    // ── Timer untuk simulasi My Apps ───────────────────────────────────────
+    private Timer simulatorTimer = null;
 
     // ════════════════════════════════════════════════════════════════════════
-    // PALET WARNA — Tema Cerah & Modern (Soft Blue & White)
+    // PALET WARNA — Tema Gelap (Dark Indigo, Spring Boot style)
     // ════════════════════════════════════════════════════════════════════════
-    private static final Color BG_DEEP    = new Color(0xf0, 0xf4, 0xf8); // background terang
-    private static final Color BG_SURFACE = new Color(0xff, 0xff, 0xff); // card putih
-    private static final Color BG_SURFACE2= new Color(0xf8, 0xfa, 0xfc); // elevated
-    private static final Color BG_SIDEBAR = new Color(0xe8, 0xf0, 0xf8); // sidebar biru muda
+    // ── Background
+    private static final Color BG_DEEP     = new Color(0x0f, 0x11, 0x17); // #0f1117
+    private static final Color BG_SURFACE  = new Color(0x1a, 0x1d, 0x27); // #1a1d27
+    private static final Color BG_SURFACE2 = new Color(0x21, 0x25, 0x3a); // #21253a
+    private static final Color BG_SIDEBAR  = new Color(0x13, 0x15, 0x1f); // #13151f
 
-    private static final Color PRIMARY    = new Color(0x3b, 0x82, 0xf6); // biru cerah
-    private static final Color PRIMARY_DIM= new Color(59, 130, 246, 50); // biru transparan
-    private static final Color SUCCESS    = new Color(0x10, 0xb9, 0x81); // hijau emerald
-    private static final Color SUCCESS_DIM= new Color(16, 185, 129, 40);
-    private static final Color WARNING    = new Color(0xf5, 0x9e, 0x0b); // kuning
-    private static final Color DANGER     = new Color(0xef, 0x44, 0x44); // merah
-    private static final Color DANGER_DIM = new Color(239, 68, 68, 40);
-    private static final Color INFO       = new Color(0x06, 0xb6, 0xd4); // cyan
-    private static final Color INFO_DIM   = new Color(6, 182, 212, 40);
+    // ── Aksen Utama
+    private static final Color PRIMARY     = new Color(0x63, 0x66, 0xf1); // #6366f1 (indigo)
+    private static final Color PRIMARY_DIM = new Color(99, 102, 241, 38);  // rgba(99,102,241,0.15)
+    private static final Color PRIMARY_HOV = new Color(0x52, 0x54, 0xcc); // #5254cc hover
 
-    private static final Color TEXT_1     = new Color(0x1e, 0x29, 0x3b); // heading gelap
-    private static final Color TEXT_2     = new Color(0x47, 0x55, 0x69); // body abu
-    private static final Color TEXT_3     = new Color(0x94, 0xa3, 0xb8); // muted
-    private static final Color BORDER     = new Color(0xe5, 0xe7, 0xeb); // border abu terang
+    // ── Semantik
+    private static final Color SUCCESS     = new Color(0x22, 0xc5, 0x5e); // #22c55e
+    private static final Color SUCCESS_DIM = new Color(34, 197, 94, 30);
+    private static final Color WARNING     = new Color(0xf5, 0x9e, 0x0b); // #f59e0b
+    private static final Color WARNING_DIM = new Color(245, 158, 11, 30);
+    private static final Color DANGER      = new Color(0xef, 0x44, 0x44); // #ef4444
+    private static final Color DANGER_DIM  = new Color(239, 68, 68, 30);
+    private static final Color INFO        = new Color(0x38, 0xbd, 0xf8); // #38bdf8
+    private static final Color INFO_DIM    = new Color(56, 189, 248, 30);
+
+    // ── Teks
+    private static final Color TEXT_1      = new Color(0xf1, 0xf5, 0xf9); // #f1f5f9
+    private static final Color TEXT_2      = new Color(0x94, 0xa3, 0xb8); // #94a3b8
+    private static final Color TEXT_3      = new Color(0x47, 0x55, 0x69); // #475569
+
+    // ── Border
+    private static final Color BORDER      = new Color(255, 255, 255, 15); // rgba(255,255,255,0.06)
+    private static final Color BORDER_HOV  = new Color(255, 255, 255, 30); // rgba(255,255,255,0.12)
 
     // ── Font ──────────────────────────────────────────────────────────────
     private static final Font F_DISPLAY = new Font("Segoe UI", Font.BOLD, 22);
@@ -128,7 +141,7 @@ public class MentalWellbeingApp extends JFrame {
 
         // ── Panel kanan: form ─────────────────────────────────────────────
         JPanel formSide = new JPanel(new GridBagLayout());
-        formSide.setBackground(new Color(0xf9, 0xfa, 0xfb));
+        formSide.setBackground(BG_DEEP);
 
         JPanel card = glassCard(new GridBagLayout());
         card.setPreferredSize(new Dimension(320, 360));
@@ -281,10 +294,10 @@ public class MentalWellbeingApp extends JFrame {
         JLabel icLbl = new JLabel("🧠", SwingConstants.CENTER);
         icLbl.setFont(new Font("Segoe UI Emoji", Font.PLAIN, 14));
         ic.add(icLbl);
-        // Logo MindFull — font diperbesar jadi 18
+        // Logo MindFull — teks putih sesuai dark theme
         JLabel logoTxt = new JLabel("MindFull");
         logoTxt.setFont(new Font("Segoe UI", Font.BOLD, 18));
-        logoTxt.setForeground(PRIMARY);
+        logoTxt.setForeground(TEXT_1);
         logoBar.add(ic); logoBar.add(logoTxt);
         sb.add(logoBar, BorderLayout.NORTH);
 
@@ -296,15 +309,25 @@ public class MentalWellbeingApp extends JFrame {
 
         // Avatar block — mirip .sidebar-profile di web
         JPanel avaBlock = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 8));
-        avaBlock.setOpaque(false);
+        avaBlock.setOpaque(true);
         avaBlock.setMaximumSize(new Dimension(Integer.MAX_VALUE, 56));
         avaBlock.setBackground(BG_SURFACE);
+        avaBlock.setBorder(BorderFactory.createCompoundBorder(
+            BorderFactory.createLineBorder(BORDER, 1, true),
+            new EmptyBorder(0, 0, 0, 0)));
         JPanel ava = avatarBox(user.getNamaUser(), 34);
         JPanel nameBox = new JPanel();
         nameBox.setLayout(new BoxLayout(nameBox, BoxLayout.Y_AXIS));
         nameBox.setOpaque(false);
         JLabel nameLbl = lbl(user.getNamaUser(), F_SUBHEAD, TEXT_1);
-        JLabel roleLbl = lbl("Member", F_CAPTION, TEXT_3);
+        // Tampilkan role yang sesuai: Parent menampilkan token, Child menampilkan umur
+        String roleText;
+        if (user.isParent()) {
+            roleText = "Parent \u00b7 " + user.getToken() + " token";
+        } else {
+            roleText = "Child \u00b7 Umur " + user.getUmur() + " thn";
+        }
+        JLabel roleLbl = lbl(roleText, F_CAPTION, TEXT_3);
         nameBox.add(nameLbl); nameBox.add(roleLbl);
         avaBlock.add(ava); avaBlock.add(nameBox);
         mid.add(avaBlock);
@@ -331,8 +354,8 @@ public class MentalWellbeingApp extends JFrame {
         Runnable[] acts;
         
         if (user.isParent()) {
-            nav = new String[]{"Dashboard", "Manage Children", "Top Up Balance", "Health Report", "Profile"};
-            acts = new Runnable[]{this::showHomePage, this::showManageChildrenPage,
+            nav = new String[]{"Dashboard", "Tracking Apps", "Manage Children", "Top Up Balance", "Health Report", "Profile"};
+            acts = new Runnable[]{this::showHomePage, this::showParentAppsSimulatorPage, this::showManageChildrenPage,
                                this::showTopUpPage, this::showReportPage, this::showProfilePage};
         } else {
             nav = new String[]{"Dashboard", "My Apps", "Profile"};
@@ -365,30 +388,45 @@ public class MentalWellbeingApp extends JFrame {
         }
         sb.add(mid, BorderLayout.CENTER);
 
-        // ── Tombol logout — pakai JPanel kustom agar bebas shadow ──────────────
-        JPanel bot = new JPanel(new FlowLayout(FlowLayout.CENTER, 0, 0));
+        // ── Tombol logout — JButton custom paint agar bebas shadow Nimbus ────────
+        JPanel bot = new JPanel(new BorderLayout());
         bot.setBackground(BG_SIDEBAR);
         bot.setOpaque(true);
         bot.setBorder(new MatteBorder(1, 0, 0, 0, BORDER));
 
-        // Panel logout kustom (mirip navItem tapi warna danger saat hover)
-        JPanel logoutPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 14, 10));
-        logoutPanel.setBackground(BG_SIDEBAR);
-        logoutPanel.setOpaque(true);
-        logoutPanel.setMaximumSize(new Dimension(Integer.MAX_VALUE, 44));
-        logoutPanel.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        JLabel logoutLbl = new JLabel("Logout");
-        logoutLbl.setFont(F_BODY);
-        logoutLbl.setForeground(TEXT_2);
-        logoutPanel.add(logoutLbl);
-        logoutPanel.addMouseListener(new MouseAdapter() {
+        JButton logoutBtn = new JButton("\uD83D\uDEAA  Logout") {
+            @Override
+            protected void paintComponent(Graphics g) {
+                Graphics2D g2 = (Graphics2D) g.create();
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                g2.setColor(getBackground());
+                g2.fillRoundRect(0, 0, getWidth(), getHeight(), 8, 8);
+                g2.dispose();
+                super.paintComponent(g);
+            }
+        };
+        logoutBtn.setFont(F_BODY);
+        logoutBtn.setForeground(TEXT_2);
+        logoutBtn.setBackground(BG_SIDEBAR);
+        logoutBtn.setContentAreaFilled(false); // matikan fill bawaan Nimbus
+        logoutBtn.setBorderPainted(false);
+        logoutBtn.setFocusPainted(false);
+        logoutBtn.setOpaque(false);
+        logoutBtn.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        logoutBtn.setMaximumSize(new Dimension(Integer.MAX_VALUE, 44));
+        logoutBtn.setHorizontalAlignment(SwingConstants.LEFT);
+        logoutBtn.setBorder(new EmptyBorder(0, 14, 0, 0));
+
+        logoutBtn.addMouseListener(new MouseAdapter() {
             public void mouseEntered(MouseEvent e) {
-                logoutLbl.setForeground(DANGER);
-                logoutPanel.setBackground(DANGER_DIM);
+                logoutBtn.setForeground(DANGER);
+                logoutBtn.setBackground(DANGER_DIM);
+                logoutBtn.repaint();
             }
             public void mouseExited(MouseEvent e) {
-                logoutLbl.setForeground(TEXT_2);
-                logoutPanel.setBackground(BG_SIDEBAR);
+                logoutBtn.setForeground(TEXT_2);
+                logoutBtn.setBackground(BG_SIDEBAR);
+                logoutBtn.repaint();
             }
             public void mouseClicked(MouseEvent e) {
                 int ok = JOptionPane.showConfirmDialog(MentalWellbeingApp.this,
@@ -400,7 +438,7 @@ public class MentalWellbeingApp extends JFrame {
                 }
             }
         });
-        bot.add(logoutPanel);
+        bot.add(logoutBtn, BorderLayout.CENTER);
         sb.add(bot, BorderLayout.SOUTH);
         return sb;
     }
@@ -421,11 +459,11 @@ public class MentalWellbeingApp extends JFrame {
             }
             activeNavPanel.repaint();
         }
-        // Tandai item baru sebagai aktif dengan warna biru
+        // Tandai item baru sebagai aktif dengan warna indigo dim
         activeNavPanel = panel;
         panel.setBackground(PRIMARY_DIM);
         for (Component c : panel.getComponents()) {
-            if (c instanceof JLabel) ((JLabel) c).setForeground(PRIMARY);
+            if (c instanceof JLabel) ((JLabel) c).setForeground(new Color(0xa5, 0xb4, 0xfc)); // light indigo
         }
         panel.repaint();
     }
@@ -565,27 +603,11 @@ public class MentalWellbeingApp extends JFrame {
         // Sub-teks
         JLabel subLbl = lbl(sub, F_CAPTION, TEXT_3);
 
-        // Progress bar tipis di bawah
-        JPanel progress = new JPanel() {
-            @Override protected void paintComponent(Graphics g) {
-                Graphics2D g2 = (Graphics2D) g.create();
-                g2.setColor(BORDER);
-                g2.fillRoundRect(0, 0, getWidth(), 4, 4, 4);
-                g2.setColor(accent);
-                int w = Math.min(getWidth(), getWidth());
-                g2.fillRoundRect(0, 0, w/2, 4, 4, 4);
-                g2.dispose();
-            }
-        };
-        progress.setOpaque(false);
-        progress.setPreferredSize(new Dimension(0, 4));
-
+        // Progress bar dummy dihapus (nilainya tidak bermakna — selalu 50%)
         JPanel inner = new JPanel();
         inner.setLayout(new BoxLayout(inner, BoxLayout.Y_AXIS));
         inner.setOpaque(false);
         inner.add(top); inner.add(valLbl); inner.add(subLbl);
-        inner.add(Box.createRigidArea(new Dimension(0, 10)));
-        inner.add(progress);
 
         card.add(inner, BorderLayout.CENTER);
         return card;
@@ -736,7 +758,7 @@ public class MentalWellbeingApp extends JFrame {
         JTextField tokenField = new JTextField();
         tokenField.setFont(F_BODY);
         tokenField.setForeground(TEXT_1);
-        tokenField.setBackground(Color.WHITE);
+        tokenField.setBackground(BG_SURFACE2);
         tokenField.setBorder(BorderFactory.createCompoundBorder(
                 BorderFactory.createLineBorder(BORDER, 1),
                 new EmptyBorder(8, 12, 8, 12)));
@@ -869,7 +891,8 @@ public class MentalWellbeingApp extends JFrame {
         genBtn.addActionListener(e -> {
             String laporan = "";
             if (!user.isParent()) {
-                laporan = user.lihatLaporan().generateLaporan();
+                user.refreshAppTimers();
+                laporan = buildAppTimerReport(user);
             } else {
                 if (user.getChildAccounts().isEmpty()) {
                     toast(this, "Belum ada akun anak!", WARNING);
@@ -877,8 +900,8 @@ public class MentalWellbeingApp extends JFrame {
                 }
                 int childIdx = targetCombo.getSelectedIndex();
                 User child = user.getChildAccounts().get(childIdx);
-                child.memuatAktivitasDariDB(); // Muat aktivitas anak dari database
-                laporan = child.lihatLaporan().generateLaporan();
+                child.refreshAppTimers(); // Muat aktivitas real-time dari timer
+                laporan = buildAppTimerReport(child);
             }
             
             reportArea.removeAll();
@@ -908,6 +931,45 @@ public class MentalWellbeingApp extends JFrame {
         contentPanel.add(page);
         contentPanel.revalidate();
         contentPanel.repaint();
+    }
+    
+    private String buildAppTimerReport(User target) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("=== LAPORAN HARIAN ===\n");
+        sb.append("Nama User         : ").append(target.getNamaUser()).append("\n");
+        sb.append("Tanggal           : ").append(java.time.LocalDate.now().toString()).append("\n");
+        sb.append("------------------------------\n");
+        sb.append("Detail Aplikasi Real-Time:\n");
+
+        int totalSetMinutes = 0;
+        int totalUsedSeconds = 0;
+
+        for (AppTimer t : target.getAppTimers()) {
+            int usedSecs = (t.getDurationMinutes() * 60) - (int)t.getRemainingSeconds();
+            int usedMins = usedSecs / 60;
+            sb.append("- ").append(t.getAppName()).append(" : ")
+              .append(usedMins).append(" menit (Digunakan dari ").append(t.getDurationMinutes()).append(" menit)\n");
+
+            totalSetMinutes += t.getDurationMinutes();
+            totalUsedSeconds += usedSecs;
+        }
+
+        sb.append("------------------------------\n");
+        
+        if (totalSetMinutes == 0) {
+            sb.append("Belum ada aplikasi yang di-set.\n");
+            sb.append("Wellness Score    : 0%\n");
+        } else {
+            int totalUsedMins = totalUsedSeconds / 60;
+            // Wellness score: semakin banyak sisa waktu = lebih sehat (tinggi = baik)
+            int wellnessScore = 100 - (int)(((double)totalUsedMins / totalSetMinutes) * 100);
+            wellnessScore = Math.max(0, wellnessScore); // tidak boleh negatif
+            sb.append("Total Diset       : ").append(totalSetMinutes).append(" menit\n");
+            sb.append("Total Digunakan   : ").append(totalUsedMins).append(" menit\n");
+            sb.append("Wellness Score    : ").append(wellnessScore).append("%\n");
+        }
+        
+        return sb.toString();
     }
 
     // Konversi teks laporan ke HTML dengan styling cerah
@@ -1004,22 +1066,28 @@ public class MentalWellbeingApp extends JFrame {
     // HELPER METHODS — komponen UI yang dipakai berulang
     // ════════════════════════════════════════════════════════════════════════
 
-    /** Card dengan rounded corner dan background putih */
+    /** Card dengan rounded corner dan background dark surface */
     private JPanel glassCard(LayoutManager layout) {
         JPanel p = new JPanel(layout) {
             @Override protected void paintComponent(Graphics g) {
                 Graphics2D g2 = (Graphics2D) g.create();
                 g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                
+                // Shadow gelap
+                g2.setColor(new Color(0, 0, 0, 40));
+                g2.fillRoundRect(2, 4, getWidth()-4, getHeight()-4, 24, 24);
+                
                 g2.setColor(BG_SURFACE);
-                g2.fillRoundRect(0, 0, getWidth()-1, getHeight()-1, 16, 16);
+                g2.fillRoundRect(0, 0, getWidth()-2, getHeight()-2, 24, 24);
+                
                 g2.setColor(BORDER);
-                g2.setStroke(new BasicStroke(1f));
-                g2.drawRoundRect(0, 0, getWidth()-1, getHeight()-1, 16, 16);
+                g2.setStroke(new BasicStroke(1.0f));
+                g2.drawRoundRect(0, 0, getWidth()-2, getHeight()-2, 24, 24);
                 g2.dispose();
             }
         };
         p.setOpaque(false);
-        p.setBorder(new EmptyBorder(24, 24, 24, 24));
+        p.setBorder(new EmptyBorder(28, 28, 28, 28));
         return p;
     }
 
@@ -1041,17 +1109,17 @@ public class MentalWellbeingApp extends JFrame {
         return l;
     }
 
-    /** Input field dengan placeholder, styling cerah */
+    /** Input field dengan placeholder, styling dark */
     private JTextField field(String placeholder) {
         JTextField tf = new JTextField(20);
-        tf.setBackground(Color.WHITE);
+        tf.setBackground(BG_SURFACE2);
         tf.setForeground(TEXT_1);
         tf.setCaretColor(TEXT_1);
         tf.setFont(F_BODY);
         tf.setBorder(BorderFactory.createCompoundBorder(
                 BorderFactory.createLineBorder(BORDER, 1, true),
-                new EmptyBorder(9, 12, 9, 12)));
-        tf.setPreferredSize(new Dimension(260, 38));
+                new EmptyBorder(12, 16, 12, 16)));
+        tf.setPreferredSize(new Dimension(260, 44));
         // placeholder
         tf.setText(placeholder);
         tf.setForeground(TEXT_3);
@@ -1060,89 +1128,96 @@ public class MentalWellbeingApp extends JFrame {
                 if (tf.getText().equals(placeholder)) {
                     tf.setText(""); tf.setForeground(TEXT_1);
                 }
+                tf.setBackground(BG_SURFACE);
                 tf.setBorder(BorderFactory.createCompoundBorder(
                     BorderFactory.createLineBorder(PRIMARY, 2, true),
-                    new EmptyBorder(8, 12, 8, 12)));
+                    new EmptyBorder(11, 15, 11, 15)));
             }
             public void focusLost(FocusEvent e) {
                 if (tf.getText().isEmpty()) {
                     tf.setText(placeholder); tf.setForeground(TEXT_3);
                 }
+                tf.setBackground(BG_SURFACE2);
                 tf.setBorder(BorderFactory.createCompoundBorder(
                     BorderFactory.createLineBorder(BORDER, 1, true),
-                    new EmptyBorder(9, 12, 9, 12)));
+                    new EmptyBorder(12, 16, 12, 16)));
             }
         });
         return tf;
     }
 
-    /** PasswordField dengan placeholder, styling cerah */
+    /** PasswordField dengan placeholder, styling dark */
     private JPasswordField passField(String placeholder) {
         JPasswordField pf = new JPasswordField(20);
-        pf.setBackground(Color.WHITE);
+        pf.setBackground(BG_SURFACE2);
         pf.setForeground(TEXT_3);
         pf.setCaretColor(TEXT_1);
         pf.setFont(F_BODY);
         pf.setBorder(BorderFactory.createCompoundBorder(
                 BorderFactory.createLineBorder(BORDER, 1, true),
-                new EmptyBorder(9, 12, 9, 12)));
-        pf.setPreferredSize(new Dimension(260, 38));
+                new EmptyBorder(12, 16, 12, 16)));
+        pf.setPreferredSize(new Dimension(260, 44));
         pf.setEchoChar((char)0); // tampilkan placeholder sebagai teks
         pf.setText(placeholder);
         pf.addFocusListener(new FocusAdapter() {
             public void focusGained(FocusEvent e) {
                 if (String.valueOf(pf.getPassword()).equals(placeholder)) {
-                    pf.setText(""); pf.setEchoChar('●'); pf.setForeground(TEXT_1);
+                    pf.setText(""); pf.setEchoChar('\u25cf'); pf.setForeground(TEXT_1);
                 }
+                pf.setBackground(BG_SURFACE);
                 pf.setBorder(BorderFactory.createCompoundBorder(
                     BorderFactory.createLineBorder(PRIMARY, 2, true),
-                    new EmptyBorder(8, 12, 8, 12)));
+                    new EmptyBorder(11, 15, 11, 15)));
             }
             public void focusLost(FocusEvent e) {
                 if (pf.getPassword().length == 0) {
                     pf.setEchoChar((char)0);
                     pf.setText(placeholder); pf.setForeground(TEXT_3);
                 }
+                pf.setBackground(BG_SURFACE2);
                 pf.setBorder(BorderFactory.createCompoundBorder(
                     BorderFactory.createLineBorder(BORDER, 1, true),
-                    new EmptyBorder(9, 12, 9, 12)));
+                    new EmptyBorder(12, 16, 12, 16)));
             }
         });
         return pf;
     }
 
-    /** Tombol primary — biru cerah */
-    private JButton btnPrimary(String text) {
-        JButton b = new JButton(text);
+    private JButton createRoundedButton(String text, Color bg, Color hoverBg) {
+        JButton b = new JButton(text) {
+            @Override
+            protected void paintComponent(Graphics g) {
+                Graphics2D g2 = (Graphics2D) g.create();
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                g2.setColor(getBackground());
+                g2.fillRoundRect(0, 0, getWidth(), getHeight(), 24, 24); // lebih melengkung
+                super.paintComponent(g2); // Gambar teks
+                g2.dispose();
+            }
+        };
         b.setFont(F_SUBHEAD);
-        b.setBackground(PRIMARY);
+        b.setBackground(bg);
         b.setForeground(Color.WHITE);
+        b.setContentAreaFilled(false);
         b.setBorderPainted(false);
         b.setFocusPainted(false);
         b.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        b.setPreferredSize(new Dimension(260, 40));
+        b.setPreferredSize(new Dimension(260, 42));
         b.addMouseListener(new MouseAdapter() {
-            public void mouseEntered(MouseEvent e) { b.setBackground(new Color(0x25, 0x63, 0xeb)); }
-            public void mouseExited(MouseEvent e)  { b.setBackground(PRIMARY); }
+            public void mouseEntered(MouseEvent e) { b.setBackground(hoverBg); }
+            public void mouseExited(MouseEvent e)  { b.setBackground(bg); }
         });
         return b;
     }
 
+    /** Tombol primary — biru cerah */
+    private JButton btnPrimary(String text) {
+        return createRoundedButton(text, PRIMARY, new Color(0x25, 0x63, 0xeb));
+    }
+
     /** Tombol success — hijau emerald */
     private JButton btnSuccess(String text) {
-        JButton b = new JButton(text);
-        b.setFont(F_SUBHEAD);
-        b.setBackground(SUCCESS);
-        b.setForeground(Color.WHITE);
-        b.setBorderPainted(false);
-        b.setFocusPainted(false);
-        b.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        b.setPreferredSize(new Dimension(260, 40));
-        b.addMouseListener(new MouseAdapter() {
-            public void mouseEntered(MouseEvent e) { b.setBackground(new Color(0x0d, 0x9e, 0x6d)); }
-            public void mouseExited(MouseEvent e)  { b.setBackground(SUCCESS); }
-        });
-        return b;
+        return createRoundedButton(text, SUCCESS, new Color(0x0d, 0x9e, 0x6d));
     }
 
     /** Tombol link teks kecil (teks saja, tanpa background) */
@@ -1161,20 +1236,20 @@ public class MentalWellbeingApp extends JFrame {
         return b;
     }
 
-    /** Tombol pill kecil untuk Quick Actions */
+    /** Tombol pill kecil untuk Quick Actions — dark style */
     private JButton pillBtn(String text) {
         JButton b = new JButton(text);
         b.setFont(F_CAPTION);
         b.setForeground(TEXT_1);
-        b.setBackground(Color.WHITE);
+        b.setBackground(BG_SURFACE2);
         b.setBorder(BorderFactory.createCompoundBorder(
                 BorderFactory.createLineBorder(BORDER, 1, true),
                 new EmptyBorder(5, 14, 5, 14)));
         b.setFocusPainted(false);
         b.setCursor(new Cursor(Cursor.HAND_CURSOR));
         b.addMouseListener(new MouseAdapter() {
-            public void mouseEntered(MouseEvent e) { b.setForeground(PRIMARY); b.setBackground(PRIMARY_DIM); }
-            public void mouseExited(MouseEvent e)  { b.setForeground(TEXT_1); b.setBackground(Color.WHITE); }
+            public void mouseEntered(MouseEvent e) { b.setForeground(PRIMARY); b.setBackground(BG_SURFACE); }
+            public void mouseExited(MouseEvent e)  { b.setForeground(TEXT_1); b.setBackground(BG_SURFACE2); }
         });
         return b;
     }
@@ -1186,27 +1261,41 @@ public class MentalWellbeingApp extends JFrame {
      * @return JPanel yang berfungsi sebagai nav item
      */
     private JPanel navItem(String text) {
-        // Warna hover untuk tema cerah
-        final Color HOVER_COLOR  = new Color(0xdb, 0xe9, 0xf7); // biru muda terang
+        // Warna hover untuk tema gelap
+        final Color HOVER_COLOR  = new Color(255, 255, 255, 30);
         final Color NORMAL_COLOR = BG_SIDEBAR;
 
         JPanel p = new JPanel(new BorderLayout()) {
             @Override
             protected void paintComponent(Graphics g) {
-                g.setColor(getBackground());
-                g.fillRect(0, 0, getWidth(), getHeight());
+                Graphics2D g2 = (Graphics2D) g.create();
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                
+                // Draw pill background jika di-hover atau aktif
+                if (getBackground() != NORMAL_COLOR) {
+                    g2.setColor(getBackground());
+                    g2.fillRoundRect(16, 0, getWidth() - 32, getHeight(), 24, 24);
+                }
+                
+                // Indikator aktif di sebelah kiri
+                if (this == activeNavPanel) {
+                    g2.setColor(PRIMARY);
+                    g2.fillRoundRect(16, getHeight()/4, 4, getHeight()/2, 4, 4);
+                }
+                g2.dispose();
             }
         };
         p.setBackground(NORMAL_COLOR);
         p.setOpaque(false);
         p.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        p.setMaximumSize(new Dimension(Integer.MAX_VALUE, 38));
-        p.setPreferredSize(new Dimension(196, 38));
-        p.setMinimumSize(new Dimension(0, 38));
+        p.setMaximumSize(new Dimension(Integer.MAX_VALUE, 44));
+        p.setPreferredSize(new Dimension(196, 44));
+        p.setMinimumSize(new Dimension(0, 44));
 
-        // Label teks rata tengah sidebar
-        JLabel lbl = new JLabel(text, SwingConstants.CENTER);
-        lbl.setFont(F_BODY);
+        // Label teks rata kiri dengan padding
+        JLabel lbl = new JLabel(text, SwingConstants.LEFT);
+        lbl.setBorder(new EmptyBorder(0, 36, 0, 0));
+        lbl.setFont(new Font("Segoe UI", Font.BOLD, 13));
         lbl.setForeground(TEXT_2);
         p.add(lbl, BorderLayout.CENTER);
 
@@ -1214,12 +1303,14 @@ public class MentalWellbeingApp extends JFrame {
             public void mouseEntered(MouseEvent e) {
                 if (p != activeNavPanel) {
                     p.setBackground(HOVER_COLOR);
+                    lbl.setForeground(new Color(0xa5, 0xb4, 0xfc)); // light indigo
                     p.repaint();
                 }
             }
             public void mouseExited(MouseEvent e) {
                 if (p != activeNavPanel) {
                     p.setBackground(NORMAL_COLOR);
+                    lbl.setForeground(TEXT_2);
                     p.repaint();
                 }
             }
@@ -1257,18 +1348,18 @@ public class MentalWellbeingApp extends JFrame {
         return cb;
     }
 
-    /** Terapkan style cerah ke ComboBox yang sudah ada */
+    /** Terapkan style dark ke ComboBox yang sudah ada */
     private void styleCombo(JComboBox<?> cb) {
-        cb.setBackground(Color.WHITE);
+        cb.setBackground(BG_SURFACE2);
         cb.setForeground(TEXT_1);
         cb.setFont(F_BODY);
         cb.setPreferredSize(new Dimension(260, 38));
         cb.setBorder(BorderFactory.createLineBorder(BORDER, 1));
     }
 
-    /** JTable dengan styling cerah */
+    /** JTable dengan styling dark */
     private void styleTable(JTable table) {
-        table.setBackground(Color.WHITE);
+        table.setBackground(BG_SURFACE);
         table.setForeground(TEXT_1);
         table.setFont(F_BODY);
         table.setGridColor(BORDER);
@@ -1276,7 +1367,7 @@ public class MentalWellbeingApp extends JFrame {
         table.setShowHorizontalLines(true);
         table.setShowVerticalLines(false);
         table.setSelectionBackground(PRIMARY_DIM);
-        table.setSelectionForeground(PRIMARY);
+        table.setSelectionForeground(new Color(0xa5, 0xb4, 0xfc));
         table.setFillsViewportHeight(true);
         // Header tabel
         JTableHeader header = table.getTableHeader();
@@ -1290,7 +1381,7 @@ public class MentalWellbeingApp extends JFrame {
     private JScrollPane styledScroll(JTable table) {
         JScrollPane sp = new JScrollPane(table);
         sp.setOpaque(false);
-        sp.getViewport().setBackground(Color.WHITE);
+        sp.getViewport().setBackground(BG_SURFACE);
         sp.setBorder(BorderFactory.createEmptyBorder());
         sp.getVerticalScrollBar().setUnitIncrement(16);
         return sp;
@@ -1445,42 +1536,91 @@ public class MentalWellbeingApp extends JFrame {
     }
     
     /**
-     * Membuat card untuk child account dengan opsi set timer
+     * Membuat card untuk child account dengan opsi set timer dan daftar timer yang sudah di-set.
      */
     private JPanel createChildCard(User child) {
-        JPanel card = new JPanel(new BorderLayout(10, 10));
+        JPanel card = new JPanel(new BorderLayout(10, 8));
         card.setBackground(BG_SURFACE2);
         card.setBorder(new EmptyBorder(12, 14, 12, 14));
-        card.setMaximumSize(new Dimension(Integer.MAX_VALUE, 100));
-        
-        // Avatar + Info
+        card.setMaximumSize(new Dimension(Integer.MAX_VALUE, Integer.MAX_VALUE)); // bisa expand
+
+        // ── Baris atas: avatar + info + tombol Set Timer ──────────────────────
+        JPanel topRow = new JPanel(new BorderLayout(10, 0));
+        topRow.setOpaque(false);
+
         JPanel infoPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 0));
         infoPanel.setOpaque(false);
         infoPanel.add(avatarBox(child.getNamaUser(), 40));
-        
+
         JPanel textInfo = new JPanel();
         textInfo.setLayout(new BoxLayout(textInfo, BoxLayout.Y_AXIS));
         textInfo.setOpaque(false);
         textInfo.add(lbl(child.getNamaUser(), F_SUBHEAD, TEXT_1));
-        textInfo.add(lbl("@" + child.getUsername(), F_CAPTION, TEXT_3));
+        textInfo.add(lbl("@" + child.getUsername() + "  \u00b7  Umur " + child.getUmur() + " thn", F_CAPTION, TEXT_3));
         infoPanel.add(textInfo);
-        
-        card.add(infoPanel, BorderLayout.WEST);
-        
-        // Button Set Timer
-        JButton setTimerBtn = new JButton("Set Timer");
+        topRow.add(infoPanel, BorderLayout.WEST);
+
+        JButton setTimerBtn = new JButton("+ Set Timer");
         setTimerBtn.setFont(F_CAPTION);
-        setTimerBtn.setBackground(PRIMARY);
         setTimerBtn.setForeground(Color.WHITE);
+        setTimerBtn.setBackground(PRIMARY);
         setTimerBtn.setBorderPainted(false);
         setTimerBtn.setFocusPainted(false);
+        setTimerBtn.setContentAreaFilled(false); // hindari shadow Nimbus
+        setTimerBtn.setOpaque(true);
         setTimerBtn.setCursor(new Cursor(Cursor.HAND_CURSOR));
         setTimerBtn.setPreferredSize(new Dimension(100, 30));
-        
         setTimerBtn.addActionListener(e -> showSetTimerDialog(child));
-        
-        card.add(setTimerBtn, BorderLayout.EAST);
-        
+        topRow.add(setTimerBtn, BorderLayout.EAST);
+        card.add(topRow, BorderLayout.NORTH);
+
+        // ── Bawah: List App Timers yang sudah di-set ──────────────────────────
+        child.refreshAppTimers(); // ambil data timer terbaru dari DB
+
+        if (!child.getAppTimers().isEmpty()) {
+            JPanel timerListPanel = new JPanel();
+            timerListPanel.setLayout(new BoxLayout(timerListPanel, BoxLayout.Y_AXIS));
+            timerListPanel.setOpaque(false);
+            timerListPanel.setBorder(new EmptyBorder(10, 0, 0, 0));
+
+            timerListPanel.add(lbl("App Timers:", F_CAPTION, TEXT_3));
+            timerListPanel.add(Box.createRigidArea(new Dimension(0, 6)));
+
+            for (AppTimer timer : child.getAppTimers()) {
+                JPanel timerRow = new JPanel(new BorderLayout(8, 0));
+                timerRow.setOpaque(true);
+                timerRow.setBackground(BG_SURFACE);
+                timerRow.setBorder(new EmptyBorder(7, 10, 7, 10));
+                timerRow.setMaximumSize(new Dimension(Integer.MAX_VALUE, 36));
+
+                // Kiri: emoji + nama app
+                JPanel leftSide = new JPanel(new FlowLayout(FlowLayout.LEFT, 6, 0));
+                leftSide.setOpaque(false);
+                JLabel emojiLbl = new JLabel(getAppEmoji(timer.getAppName()));
+                emojiLbl.setFont(new Font("Segoe UI Emoji", Font.PLAIN, 14));
+                leftSide.add(emojiLbl);
+                leftSide.add(lbl(timer.getAppName(), F_CAPTION, TEXT_1));
+                timerRow.add(leftSide, BorderLayout.WEST);
+
+                // Kanan: durasi + status
+                String statusText = timer.getDurationMinutes() + " menit";
+                Color statusColor = timer.isTracking() ? SUCCESS : TEXT_3;
+                String trackLabel = timer.isTracking() ? " \u00b7 Aktif" : " \u00b7 Nonaktif";
+                timerRow.add(lbl(statusText + trackLabel, F_CAPTION, statusColor), BorderLayout.EAST);
+
+                timerListPanel.add(timerRow);
+                timerListPanel.add(Box.createRigidArea(new Dimension(0, 4)));
+            }
+
+            card.add(timerListPanel, BorderLayout.CENTER);
+        } else {
+            JPanel noTimer = new JPanel(new FlowLayout(FlowLayout.LEFT));
+            noTimer.setOpaque(false);
+            noTimer.setBorder(new EmptyBorder(8, 0, 0, 0));
+            noTimer.add(lbl("Belum ada timer yang di-set", F_CAPTION, TEXT_3));
+            card.add(noTimer, BorderLayout.CENTER);
+        }
+
         return card;
     }
     
@@ -1493,7 +1633,7 @@ public class MentalWellbeingApp extends JFrame {
         dialog.setLocationRelativeTo(this);
         
         JPanel panel = new JPanel(new BorderLayout(0, 16));
-        panel.setBackground(Color.WHITE);
+        panel.setBackground(BG_SURFACE);
         panel.setBorder(new EmptyBorder(20, 20, 20, 20));
         
         // Header
@@ -1516,28 +1656,15 @@ public class MentalWellbeingApp extends JFrame {
         dateSpinner.setPreferredSize(new Dimension(260, 38));
         dateSpinner.setFont(F_BODY);
         
-        // Jam Mulai Picker
-        JSpinner startSpinner = new JSpinner(new SpinnerDateModel());
-        JSpinner.DateEditor startEditor = new JSpinner.DateEditor(startSpinner, "HH:mm");
-        startSpinner.setEditor(startEditor);
-        startSpinner.setPreferredSize(new Dimension(260, 38));
-        startSpinner.setFont(F_BODY);
-        
-        // Jam Berakhir Picker
-        JSpinner endSpinner = new JSpinner(new SpinnerDateModel());
-        JSpinner.DateEditor endEditor = new JSpinner.DateEditor(endSpinner, "HH:mm");
-        endSpinner.setEditor(endEditor);
-        endSpinner.setPreferredSize(new Dimension(260, 38));
-        endSpinner.setFont(F_BODY);
+        // Durasi Input
+        JTextField durationField = field("Berapa menit?");
         
         g.gridy=row++; formPanel.add(lbl("Aplikasi", F_CAPTION, TEXT_3), g);
         g.gridy=row++; g.insets=new Insets(0,0,10,0); formPanel.add(appCombo, g);
         g.gridy=row++; g.insets=new Insets(4,0,4,0); formPanel.add(lbl("Tanggal", F_CAPTION, TEXT_3), g);
         g.gridy=row++; g.insets=new Insets(0,0,10,0); formPanel.add(dateSpinner, g);
-        g.gridy=row++; g.insets=new Insets(4,0,4,0); formPanel.add(lbl("Jam Mulai", F_CAPTION, TEXT_3), g);
-        g.gridy=row++; g.insets=new Insets(0,0,10,0); formPanel.add(startSpinner, g);
-        g.gridy=row++; g.insets=new Insets(4,0,4,0); formPanel.add(lbl("Jam Berakhir", F_CAPTION, TEXT_3), g);
-        g.gridy=row++; g.insets=new Insets(0,0,10,0); formPanel.add(endSpinner, g);
+        g.gridy=row++; g.insets=new Insets(4,0,4,0); formPanel.add(lbl("Durasi Waktu (Menit)", F_CAPTION, TEXT_3), g);
+        g.gridy=row++; g.insets=new Insets(0,0,10,0); formPanel.add(durationField, g);
         
         panel.add(formPanel, BorderLayout.CENTER);
         
@@ -1558,24 +1685,33 @@ public class MentalWellbeingApp extends JFrame {
                 String appName = appCombo.getSelectedItem().toString();
                 
                 java.util.Date dateVal = (java.util.Date) dateSpinner.getValue();
-                java.util.Date startVal = (java.util.Date) startSpinner.getValue();
-                java.util.Date endVal = (java.util.Date) endSpinner.getValue();
-                
                 java.time.LocalDate tanggal = dateVal.toInstant().atZone(java.time.ZoneId.systemDefault()).toLocalDate();
-                java.time.LocalTime startTime = startVal.toInstant().atZone(java.time.ZoneId.systemDefault()).toLocalTime();
-                java.time.LocalTime endTime = endVal.toInstant().atZone(java.time.ZoneId.systemDefault()).toLocalTime();
                 
-                int duration = (int) java.time.Duration.between(startTime, endTime).toMinutes();
-                if (duration <= 0) {
-                    toast(this, "Jam berakhir harus setelah jam mulai!", WARNING);
+                String durStr = durationField.getText().trim();
+                if (durStr.equals("Berapa menit?")) durStr = "0"; // placeholder
+                
+                int duration;
+                try {
+                    duration = Integer.parseInt(durStr);
+                } catch (NumberFormatException nfe) {
+                    toast(this, "Durasi harus berupa angka bulat!", WARNING);
                     return;
                 }
+                
+                if (duration <= 0) {
+                    toast(this, "Durasi harus lebih dari 0 menit!", WARNING);
+                    return;
+                }
+                
+                java.time.LocalTime startTime = java.time.LocalTime.now();
+                java.time.LocalTime endTime = startTime.plusMinutes(duration);
                 
                 DatabaseHelper.tambahAppTimer(child.getId(), appName, duration, tanggal, startTime, endTime);
                 user.kurangiToken(5); // Deduct parent token
                 
-                toast(this, "Timer berhasil digenerate! −5 token", SUCCESS);
+                toast(this, "Timer berhasil digenerate! \u22125 token", SUCCESS);
                 dialog.dispose();
+                showManageChildrenPage(); // refresh agar list timer langsung muncul
             } catch (Exception ex) {
                 toast(this, "Error: Data tidak valid atau " + ex.getMessage(), DANGER);
             }
@@ -1594,113 +1730,187 @@ public class MentalWellbeingApp extends JFrame {
     // ════════════════════════════════════════════════════════════════════════
     // PAGE: MY APPS (Child only)
     // ════════════════════════════════════════════════════════════════════════
+    private AppTimer activeSimulatedApp = null;
+    private JPanel dummyPhoneContent = null;
+
+    private void showParentAppsSimulatorPage() {
+        if (user.getChildAccounts().isEmpty()) {
+            contentPanel.removeAll();
+            JPanel page = new JPanel(new BorderLayout(0, 20));
+            page.setBackground(BG_DEEP);
+            page.setBorder(new EmptyBorder(28, 32, 28, 32));
+            page.add(pageHeader("Tracking Apps", "Pantau sisa waktu aplikasi anak"), BorderLayout.NORTH);
+            JPanel empty = new JPanel(new FlowLayout());
+            empty.setOpaque(false);
+            empty.add(lbl("Belum ada akun anak untuk dipantau.", F_BODY, TEXT_3));
+            page.add(empty, BorderLayout.CENTER);
+            contentPanel.add(page);
+            contentPanel.revalidate(); contentPanel.repaint();
+        } else {
+            showAppsSimulatorPage(user.getChildAccounts().get(0));
+        }
+    }
+
     private void showChildAppsPage() {
+        showAppsSimulatorPage(user);
+    }
+
+    private void showAppsSimulatorPage(User targetUser) {
+        if (simulatorTimer != null) {
+            simulatorTimer.stop();
+        }
+        activeSimulatedApp = null;
+
         contentPanel.removeAll();
         JPanel page = new JPanel(new BorderLayout(0, 20));
         page.setBackground(BG_DEEP);
         page.setBorder(new EmptyBorder(28, 32, 28, 32));
-        page.add(pageHeader("My Apps", "Aplikasi yang di-track oleh orang tua"), BorderLayout.NORTH);
         
-        // Refresh app timers
-        user.refreshAppTimers();
-        
-        if (user.getAppTimers().isEmpty()) {
-            JPanel emptyPanel = new JPanel(new GridBagLayout());
-            emptyPanel.setOpaque(false);
-            JLabel emptyLbl = lbl("Belum ada aplikasi yang di-track", F_HEADING, TEXT_3);
-            emptyPanel.add(emptyLbl);
-            page.add(emptyPanel, BorderLayout.CENTER);
-        } else {
-            // Grid aplikasi dummy
-            JPanel appsGrid = new JPanel(new GridLayout(0, 3, 16, 16));
-            appsGrid.setOpaque(false);
+        JPanel headerPanel = new JPanel(new BorderLayout());
+        headerPanel.setOpaque(false);
+        headerPanel.add(pageHeader(user.isParent() ? "Tracking Apps" : "My Apps Simulator", 
+            user.isParent() ? ("Memantau aktivitas " + targetUser.getNamaUser()) : "Simulasikan penggunaan aplikasi di handphone Anda dan pantau sisa batas waktu secara realtime."), BorderLayout.NORTH);
             
-            for (AppTimer timer : user.getAppTimers()) {
+        if (user.isParent() && !user.getChildAccounts().isEmpty()) {
+            JPanel topBar = new JPanel(new FlowLayout(FlowLayout.LEFT));
+            topBar.setOpaque(false);
+            topBar.add(lbl("Pilih Anak: ", F_BODY, TEXT_1));
+            JComboBox<String> targetCombo = new JComboBox<>();
+            int selectedIdx = 0;
+            for (int i=0; i<user.getChildAccounts().size(); i++) {
+                User child = user.getChildAccounts().get(i);
+                targetCombo.addItem(child.getNamaUser());
+                if (child.getId() == targetUser.getId()) selectedIdx = i;
+            }
+            targetCombo.setSelectedIndex(selectedIdx);
+            styleCombo(targetCombo);
+            targetCombo.addActionListener(e -> {
+                int idx = targetCombo.getSelectedIndex();
+                if (idx >= 0) {
+                    showAppsSimulatorPage(user.getChildAccounts().get(idx));
+                }
+            });
+            headerPanel.add(topBar, BorderLayout.SOUTH);
+        }
+        page.add(headerPanel, BorderLayout.NORTH);
+        
+        targetUser.refreshAppTimers();
+        
+        JPanel body = new JPanel(new GridLayout(1, user.isParent() ? 1 : 2, 24, 0));
+        body.setOpaque(false);
+        
+        // ── KIRI: Daftar Aplikasi ───────────────────────────────────────
+        JPanel leftPanel = new JPanel(new BorderLayout(0, 16));
+        leftPanel.setOpaque(false);
+        leftPanel.add(lbl("Daftar Aplikasi", F_HEADING, TEXT_1), BorderLayout.NORTH);
+        
+        JPanel appList = new JPanel();
+        appList.setLayout(new BoxLayout(appList, BoxLayout.Y_AXIS));
+        appList.setOpaque(false);
+        
+        // Buat map komponen untuk diupdate secara real-time oleh timer
+        java.util.Map<AppTimer, JLabel> timeLabels = new java.util.HashMap<>();
+        
+        if (targetUser.getAppTimers().isEmpty()) {
+            appList.add(lbl("Belum ada aplikasi yang di-track", F_BODY, TEXT_3));
+        } else {
+            for (AppTimer timer : targetUser.getAppTimers()) {
                 if (timer.isTracking()) {
-                    JPanel appCard = createAppIconCard(timer);
-                    appsGrid.add(appCard);
+                    JLabel timeLbl = lbl(timer.getSimulatedRemainingTimeString(), F_SUBHEAD, timer.isSimulatedSafe() ? SUCCESS : WARNING);
+                    timeLabels.put(timer, timeLbl);
+                    JPanel row = createAppListRow(timer, timeLbl, () -> {
+                        activeSimulatedApp = timer;
+                        updateDummyPhoneView(body);
+                    });
+                    appList.add(row);
+                    appList.add(Box.createRigidArea(new Dimension(0, 10)));
                 }
             }
-            
-            JScrollPane scroll = new JScrollPane(appsGrid);
-            scroll.setBorder(BorderFactory.createEmptyBorder());
-            scroll.setOpaque(false);
-            scroll.getViewport().setOpaque(false);
-            page.add(scroll, BorderLayout.CENTER);
         }
+        
+        JScrollPane scroll = new JScrollPane(appList);
+        scroll.setBorder(BorderFactory.createEmptyBorder());
+        scroll.setOpaque(false); scroll.getViewport().setOpaque(false);
+        leftPanel.add(scroll, BorderLayout.CENTER);
+        
+        body.add(leftPanel);
+        
+        if (!user.isParent()) {
+            // ── KANAN: Dummy Phone ──────────────────────────────────────────
+            JPanel rightPanel = buildDummyPhonePanel(body);
+            body.add(rightPanel);
+        }
+        
+        page.add(body, BorderLayout.CENTER);
+        
+        // ── Timer Global untuk Halaman Ini ──────────────────────────────
+        simulatorTimer = new Timer(1000, e -> {
+            if (activeSimulatedApp != null) {
+                activeSimulatedApp.decrementRemainingSeconds();
+                updateDummyPhoneView(body);
+                // Sync to database
+                try {
+                    database.DatabaseHelper.updateAppTimerRemainingSeconds(activeSimulatedApp.getId(), activeSimulatedApp.getRemainingSeconds());
+                } catch (Exception ex) {
+                    System.err.println("[Timer] Gagal sync waktu ke DB: " + ex.getMessage());
+                }
+            }
+            // Update label di list aplikasi menggunakan Map untuk memastikan object tepat
+            for (java.util.Map.Entry<AppTimer, JLabel> entry : timeLabels.entrySet()) {
+                AppTimer t = entry.getKey();
+                JLabel lbl = entry.getValue();
+                lbl.setText(t.getSimulatedRemainingTimeString());
+                lbl.setForeground(t.isSimulatedSafe() ? SUCCESS : WARNING);
+            }
+            if (body != null) {
+                body.revalidate();
+                body.repaint();
+            }
+        });
+        simulatorTimer.start();
         
         contentPanel.add(page);
         contentPanel.revalidate();
         contentPanel.repaint();
     }
     
-    /**
-     * Membuat card icon aplikasi dengan timer countdown
-     */
-    private JPanel createAppIconCard(AppTimer timer) {
-        JPanel card = new JPanel(new BorderLayout()) {
-            @Override protected void paintComponent(Graphics g) {
-                Graphics2D g2 = (Graphics2D) g.create();
-                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-                
-                // Determine color based on timer status
-                Color bgColor = timer.isSafe() ? new Color(0xd1, 0xfa, 0xe5) : new Color(0xfe, 0xe2, 0xe2);
-                g2.setColor(bgColor);
-                g2.fillRoundRect(0, 0, getWidth(), getHeight(), 16, 16);
-                
-                // Border
-                Color borderColor = timer.isSafe() ? SUCCESS : DANGER;
-                g2.setColor(borderColor);
-                g2.setStroke(new BasicStroke(2f));
-                g2.drawRoundRect(0, 0, getWidth()-1, getHeight()-1, 16, 16);
-                g2.dispose();
-            }
-        };
-        card.setOpaque(false);
-        card.setPreferredSize(new Dimension(200, 220));
-        card.setBorder(new EmptyBorder(20, 16, 20, 16));
-        card.setCursor(new Cursor(Cursor.HAND_CURSOR));
+    private JPanel createAppListRow(AppTimer timer, JLabel timeLbl, Runnable onOpen) {
+        JPanel row = glassCard(new BorderLayout(14, 0));
+        row.setMaximumSize(new Dimension(Integer.MAX_VALUE, 80));
+        row.setBorder(new EmptyBorder(12, 16, 12, 16));
         
-        JPanel content = new JPanel();
-        content.setLayout(new BoxLayout(content, BoxLayout.Y_AXIS));
-        content.setOpaque(false);
+        // Icon
+        JPanel iconBox = new JPanel(new BorderLayout());
+        iconBox.setPreferredSize(new Dimension(48, 48));
+        iconBox.setBackground(BG_DEEP);
+        iconBox.setBorder(BorderFactory.createLineBorder(BORDER, 1));
+        JLabel icon = new JLabel(getAppEmoji(timer.getAppName()), SwingConstants.CENTER);
+        icon.setFont(new Font("Segoe UI Emoji", Font.PLAIN, 24));
+        iconBox.add(icon);
         
-        // App icon (emoji)
-        String emoji = getAppEmoji(timer.getAppName());
-        JLabel iconLbl = new JLabel(emoji, SwingConstants.CENTER);
-        iconLbl.setFont(new Font("Segoe UI Emoji", Font.PLAIN, 48));
-        iconLbl.setAlignmentX(Component.CENTER_ALIGNMENT);
+        // Teks
+        JPanel info = new JPanel();
+        info.setLayout(new BoxLayout(info, BoxLayout.Y_AXIS));
+        info.setOpaque(false);
+        JLabel nameLbl = lbl(timer.getAppName(), F_SUBHEAD, TEXT_1);
+        JLabel subLbl = lbl("Simulasi penggunaan aplikasi.", F_CAPTION, TEXT_3);
+        info.add(nameLbl);
+        info.add(Box.createRigidArea(new Dimension(0, 4)));
+        info.add(subLbl);
+        info.add(Box.createRigidArea(new Dimension(0, 4)));
+        info.add(timeLbl);
         
-        // App name
-        JLabel nameLbl = lbl(timer.getAppName(), F_HEADING, TEXT_1);
-        nameLbl.setAlignmentX(Component.CENTER_ALIGNMENT);
+        // Tombol
+        if (!user.isParent()) {
+            JButton openBtn = btnPrimary("Buka");
+            openBtn.setPreferredSize(new Dimension(80, 36));
+            openBtn.addActionListener(e -> onOpen.run());
+            row.add(openBtn, BorderLayout.EAST);
+        }
         
-        // Timer info
-        JLabel timeLbl = lbl(timer.getRemainingTimeString(), F_SUBHEAD, timer.isSafe() ? SUCCESS : DANGER);
-        timeLbl.setAlignmentX(Component.CENTER_ALIGNMENT);
-        
-        // Time range
-        JLabel rangeLbl = lbl(timer.getStartTimeString() + " - " + timer.getEndTimeString(), F_CAPTION, TEXT_3);
-        rangeLbl.setAlignmentX(Component.CENTER_ALIGNMENT);
-        
-        content.add(iconLbl);
-        content.add(Box.createRigidArea(new Dimension(0, 8)));
-        content.add(nameLbl);
-        content.add(Box.createRigidArea(new Dimension(0, 12)));
-        content.add(timeLbl);
-        content.add(Box.createRigidArea(new Dimension(0, 4)));
-        content.add(rangeLbl);
-        
-        card.add(content, BorderLayout.CENTER);
-        
-        // Click action - show detail
-        card.addMouseListener(new MouseAdapter() {
-            public void mouseClicked(MouseEvent e) {
-                showAppDetailDialog(timer);
-            }
-        });
-        
-        return card;
+        row.add(iconBox, BorderLayout.WEST);
+        row.add(info, BorderLayout.CENTER);
+        return row;
     }
     
     /**
@@ -1720,66 +1930,164 @@ public class MentalWellbeingApp extends JFrame {
         }
     }
     
-    /**
-     * Dialog detail aplikasi dengan countdown real-time
-     */
-    private void showAppDetailDialog(AppTimer timer) {
-        JDialog dialog = new JDialog(this, timer.getAppName(), true);
-        dialog.setSize(400, 300);
-        dialog.setLocationRelativeTo(this);
+    private JPanel buildDummyPhonePanel(JPanel body) {
+        JPanel wrapper = new JPanel(new GridBagLayout());
+        wrapper.setOpaque(false);
         
-        JPanel panel = new JPanel(new BorderLayout(0, 20));
-        panel.setBackground(Color.WHITE);
-        panel.setBorder(new EmptyBorder(30, 30, 30, 30));
+        JPanel phone = new JPanel(new BorderLayout()) {
+            @Override protected void paintComponent(Graphics g) {
+                Graphics2D g2 = (Graphics2D) g.create();
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                g2.setColor(new Color(0x1e, 0x29, 0x3b)); // slate-800
+                g2.fillRoundRect(0, 0, getWidth(), getHeight(), 40, 40);
+                g2.setColor(new Color(0x33, 0x41, 0x55)); // slate-700
+                g2.setStroke(new BasicStroke(4f));
+                g2.drawRoundRect(2, 2, getWidth()-4, getHeight()-4, 38, 38);
+                g2.dispose();
+            }
+        };
+        phone.setOpaque(false);
+        phone.setPreferredSize(new Dimension(300, 560));
+        phone.setBorder(new EmptyBorder(16, 12, 24, 12));
         
-        // Icon
-        JLabel iconLbl = new JLabel(getAppEmoji(timer.getAppName()), SwingConstants.CENTER);
-        iconLbl.setFont(new Font("Segoe UI Emoji", Font.PLAIN, 72));
-        panel.add(iconLbl, BorderLayout.NORTH);
+        // Status Bar
+        JPanel statusBar = new JPanel(new BorderLayout());
+        statusBar.setOpaque(false);
+        statusBar.setBorder(new EmptyBorder(0, 10, 10, 10));
+        statusBar.add(lbl(LocalTime.now().format(DateTimeFormatter.ofPattern("HH:mm")), F_CAPTION, Color.WHITE), BorderLayout.WEST);
+        statusBar.add(lbl("📶 100%", F_CAPTION, Color.WHITE), BorderLayout.EAST);
         
-        // Info panel
-        JPanel infoPanel = new JPanel();
-        infoPanel.setLayout(new BoxLayout(infoPanel, BoxLayout.Y_AXIS));
-        infoPanel.setOpaque(false);
+        // Content Area (Dynamic)
+        dummyPhoneContent = new JPanel(new BorderLayout());
+        dummyPhoneContent.setOpaque(false);
         
-        JLabel nameLbl = lbl(timer.getAppName(), new Font("Segoe UI", Font.BOLD, 20), TEXT_1);
-        nameLbl.setAlignmentX(Component.CENTER_ALIGNMENT);
+        phone.add(statusBar, BorderLayout.NORTH);
+        phone.add(dummyPhoneContent, BorderLayout.CENTER);
         
-        JLabel timeLbl = lbl(timer.getRemainingTimeString(), new Font("Segoe UI", Font.BOLD, 16), 
-                            timer.isSafe() ? SUCCESS : DANGER);
-        timeLbl.setAlignmentX(Component.CENTER_ALIGNMENT);
+        // Home indicator
+        JPanel homeIndicatorPanel = new JPanel();
+        homeIndicatorPanel.setOpaque(false);
+        homeIndicatorPanel.setPreferredSize(new Dimension(0, 20));
+        JPanel indicator = new JPanel() {
+            @Override protected void paintComponent(Graphics g) {
+                g.setColor(new Color(255, 255, 255, 100));
+                g.fillRoundRect(getWidth()/2 - 40, 8, 80, 4, 4, 4);
+            }
+        };
+        indicator.setOpaque(false);
+        indicator.setPreferredSize(new Dimension(100, 20));
+        homeIndicatorPanel.add(indicator);
+        phone.add(homeIndicatorPanel, BorderLayout.SOUTH);
         
-        JLabel statusLbl = lbl(timer.isSafe() ? "Status: Aman ✓" : "Status: Peringatan!", F_BODY, TEXT_2);
-        statusLbl.setAlignmentX(Component.CENTER_ALIGNMENT);
+        updateDummyPhoneView(body);
+        wrapper.add(phone);
+        return wrapper;
+    }
+    
+    private void updateDummyPhoneView(JPanel body) {
+        if (dummyPhoneContent == null) return;
+        dummyPhoneContent.removeAll();
         
-        JLabel durationLbl = lbl("Durasi: " + timer.getDurationMinutes() + " menit", F_CAPTION, TEXT_3);
-        durationLbl.setAlignmentX(Component.CENTER_ALIGNMENT);
+        if (activeSimulatedApp == null) {
+            // Tampilan OS MindPhone
+            JPanel home = new JPanel();
+            home.setLayout(new BoxLayout(home, BoxLayout.Y_AXIS));
+            home.setOpaque(false);
+            
+            JLabel title = lbl("MindPhone OS", new Font("Segoe UI", Font.BOLD, 18), Color.WHITE);
+            title.setAlignmentX(Component.CENTER_ALIGNMENT);
+            JLabel sub = lbl("Pilih aplikasi di sebelah kiri untuk membukanya.", F_CAPTION, new Color(255,255,255,150));
+            sub.setAlignmentX(Component.CENTER_ALIGNMENT);
+            
+            home.add(Box.createRigidArea(new Dimension(0, 60)));
+            home.add(title);
+            home.add(Box.createRigidArea(new Dimension(0, 8)));
+            home.add(sub);
+            
+            // Grid mini apps dekoratif
+            JPanel grid = new JPanel(new GridLayout(3, 3, 16, 16));
+            grid.setOpaque(false);
+            grid.setMaximumSize(new Dimension(200, 200));
+            grid.setBorder(new EmptyBorder(40, 0, 0, 0));
+            
+            String[] dummyApps = {"TikTok", "Instagram", "YouTube", "WhatsApp"};
+            Color[] colors = {new Color(0x3b, 0x82, 0xf6), new Color(0xec, 0x48, 0x99), new Color(0xef, 0x44, 0x44), new Color(0x10, 0xb9, 0x81)};
+            
+            for (int i=0; i<dummyApps.length; i++) {
+                String app = dummyApps[i];
+                Color c = colors[i % colors.length];
+                
+                JPanel icon = new JPanel(new BorderLayout());
+                icon.setOpaque(false);
+                JLabel emoji = new JLabel(getAppEmoji(app), SwingConstants.CENTER);
+                emoji.setFont(new Font("Segoe UI Emoji", Font.PLAIN, 28));
+                JPanel bg = new JPanel(new BorderLayout()) {
+                    @Override protected void paintComponent(Graphics g) {
+                        Graphics2D g2 = (Graphics2D) g.create();
+                        g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                        g2.setColor(c);
+                        g2.fillRoundRect(0, 0, getWidth(), getHeight(), 22, 22);
+                        g2.dispose();
+                    }
+                };
+                bg.setOpaque(false);
+                bg.add(emoji);
+                icon.add(bg, BorderLayout.CENTER);
+                
+                JLabel text = lbl(app, new Font("Segoe UI", Font.PLAIN, 10), Color.WHITE);
+                text.setHorizontalAlignment(SwingConstants.CENTER);
+                text.setBorder(new EmptyBorder(4,0,0,0));
+                icon.add(text, BorderLayout.SOUTH);
+                grid.add(icon);
+            }
+            home.add(grid);
+            dummyPhoneContent.add(home, BorderLayout.CENTER);
+        } else {
+            // Tampilan Aplikasi Aktif
+            JPanel appView = new JPanel();
+            appView.setLayout(new BoxLayout(appView, BoxLayout.Y_AXIS));
+            appView.setOpaque(false);
+            
+            JLabel emoji = new JLabel(getAppEmoji(activeSimulatedApp.getAppName()), SwingConstants.CENTER);
+            emoji.setFont(new Font("Segoe UI Emoji", Font.PLAIN, 64));
+            emoji.setAlignmentX(Component.CENTER_ALIGNMENT);
+            
+            JLabel title = lbl(activeSimulatedApp.getAppName(), new Font("Segoe UI", Font.BOLD, 24), Color.WHITE);
+            title.setAlignmentX(Component.CENTER_ALIGNMENT);
+            
+            JLabel time = lbl(activeSimulatedApp.getSimulatedRemainingTimeString(), new Font("Segoe UI", Font.BOLD, 32), activeSimulatedApp.isSimulatedSafe() ? SUCCESS : WARNING);
+            time.setAlignmentX(Component.CENTER_ALIGNMENT);
+            
+            appView.add(Box.createRigidArea(new Dimension(0, 60)));
+            appView.add(emoji);
+            appView.add(Box.createRigidArea(new Dimension(0, 16)));
+            appView.add(title);
+            appView.add(Box.createRigidArea(new Dimension(0, 40)));
+            appView.add(time);
+            
+            dummyPhoneContent.add(appView, BorderLayout.CENTER);
+            
+            JButton closeBtn = new JButton("Close App");
+            closeBtn.setFont(F_SUBHEAD);
+            closeBtn.setBackground(new Color(255,255,255,30));
+            closeBtn.setForeground(Color.WHITE);
+            closeBtn.setBorder(new EmptyBorder(10, 20, 10, 20));
+            closeBtn.setFocusPainted(false);
+            closeBtn.setCursor(new Cursor(Cursor.HAND_CURSOR));
+            closeBtn.addActionListener(e -> {
+                activeSimulatedApp = null;
+                updateDummyPhoneView(body);
+            });
+            JPanel btnPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
+            btnPanel.setOpaque(false);
+            btnPanel.setBorder(new EmptyBorder(0, 0, 40, 0));
+            btnPanel.add(closeBtn);
+            dummyPhoneContent.add(btnPanel, BorderLayout.SOUTH);
+        }
         
-        JLabel rangeLbl = lbl("Waktu: " + timer.getStartTimeString() + " - " + timer.getEndTimeString(), F_CAPTION, TEXT_3);
-        rangeLbl.setAlignmentX(Component.CENTER_ALIGNMENT);
-        
-        infoPanel.add(nameLbl);
-        infoPanel.add(Box.createRigidArea(new Dimension(0, 16)));
-        infoPanel.add(timeLbl);
-        infoPanel.add(Box.createRigidArea(new Dimension(0, 8)));
-        infoPanel.add(statusLbl);
-        infoPanel.add(Box.createRigidArea(new Dimension(0, 16)));
-        infoPanel.add(durationLbl);
-        infoPanel.add(Box.createRigidArea(new Dimension(0, 4)));
-        infoPanel.add(rangeLbl);
-        
-        panel.add(infoPanel, BorderLayout.CENTER);
-        
-        JButton closeBtn = btnPrimary("Tutup");
-        closeBtn.addActionListener(e -> dialog.dispose());
-        
-        JPanel btnPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
-        btnPanel.setOpaque(false);
-        btnPanel.add(closeBtn);
-        panel.add(btnPanel, BorderLayout.SOUTH);
-        
-        dialog.setContentPane(panel);
-        dialog.setVisible(true);
+        dummyPhoneContent.revalidate();
+        dummyPhoneContent.repaint();
+        if (body != null) body.repaint();
     }
 
     // ════════════════════════════════════════════════════════════════════════

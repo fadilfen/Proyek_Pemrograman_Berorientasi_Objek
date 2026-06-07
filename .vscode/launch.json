@@ -3,6 +3,13 @@
     "configurations": [
         {
             "type": "java",
+            "name": "MentalWellbeingApp",
+            "request": "launch",
+            "mainClass": "tubes_a11.MentalWellbeingApp",
+            "projectName": "oop_a11"
+        },
+        {
+            "type": "java",
             "name": "Run MindFull App",
             "request": "launch",
             "mainClass": "tubes_a11.Main",
